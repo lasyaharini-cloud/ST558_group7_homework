@@ -1,0 +1,250 @@
+---
+title: "hw2_final"
+format: html
+editor: visual
+---
+
+## **Task 1: Basic Vector Practice**
+
+**Q1)** Create two vectors. One vector corresponding to the pre measurements and one to the post measurements.
+
+```{r}
+
+# Pre treatment blood pressure measurements
+pre_bp <- c(130, 128, 116, 124, 133, 
+            134, 118, 126, 114, 127, 
+            141, 138, 128, 140, 137, 
+            131, 120, 128, 139, 135)
+
+# Post-treatment blood pressure measurements
+post_bp <- c(114, 98, 113, 99, 107, 116,
+             113, 111, 119, 117, 101, 119, 
+             130, 122, 106, 106, 124, 102, 
+             117, 113)
+
+```
+
+**Q2)** Assign names to the vector elements using the paste() function.
+
+```{r}
+
+# create names and asign them
+patient <- paste('Subject', 1:20, sep = '_')
+
+names(pre_bp) <- patient
+names(post_bp) <- patient
+
+pre_bp
+post_bp
+
+```
+
+**Q3)** Calculate the change in blood pressure for each patient by subtracting post-treatment measurements from pre-treatment measurements
+
+```{r}
+# Calculate the change in blood pressure 
+diff_bp <- pre_bp - post_bp
+diff_bp
+```
+
+**Q4)** Calculate the average decrease in blood pressure across all patients
+
+```{r}
+
+# Calculate avg change for all patients
+avg_dec <- mean(diff_bp)
+avg_dec
+```
+
+**Q5)** Determine which patients experienced a decrease in blood pressure after treatment (a positive change). Use the which() function to just return the indices (and names) associated with this type of change.
+
+```{r}
+
+# Find patients with a positive change
+which(diff_bp > 0)
+```
+
+**Q6)** Subset the vector of differences to only return those that have a positive change.
+
+```{r}
+
+# Subset to keep only positive changes
+pos_change <- diff_bp[diff_bp > 0]
+
+pos_change
+```
+
+**Q7)** Calculate the average decrease in blood pressure for those where the blood pressure decreased (positive change).
+
+```{r}
+
+# Find the mean positive change
+avg_pos_change <- mean(pos_change)
+avg_pos_change
+```
+
+------------------------------------------------------------------------
+
+## **Task 2: Basic Data Frame Practice**
+
+**1)** Create a data frame object with four columns corresponding to your data above: patient, pre_bp, post_bp, and diff_bp
+
+```{r}
+
+# Create bp dataframe
+bp_df <- data.frame(
+  patient = patient,
+  pre_bp = pre_bp,
+  post_bp = post_bp,
+  diff_bp = diff_bp
+)
+
+bp_df
+```
+
+**2)** Return only rows where the diff_bp column is negative. (Use \[ or learn about the subset() function if you’d like.
+
+```{r}
+
+# Return rows where bp change is negative
+bp_df[bp_df$diff_bp < 0, ]
+```
+
+**3)** Add a new column to the data frame corresponding to TRUE if the post_bp is less than 120. Recall you can use \$ to reference a column.
+
+```{r}
+# Create a new column for optimal bp
+bp_df$healthy_bp <- bp_df$post_bp < 120
+
+bp_df
+```
+
+**4)** Finally, print the data frame out nicely in your final document by modifying the code below appropriately.
+
+```{r}
+
+#print df formatted
+
+knitr::kable(bp_df)
+```
+
+------------------------------------------------------------------------
+
+## **Task 3: List Practice**
+
+**1)** Create a new data frame with this data in it that is similar to the data frame from task 2
+
+```{r}
+
+# pre-treatment placebo bp measurements
+pre_placebo_bp <- c(138, 135, 147, 117, 152, 134, 114, 121, 131, 130)
+
+#post treatment placebo bp measurements
+post_placebo_bp <- c(105, 136, 123, 130, 134, 143, 135, 139, 120, 124)
+
+#calculate the change in bp
+placebo_diff <- pre_placebo_bp - post_placebo_bp
+
+#get the subject names
+placebo_names <- paste("Subject", 1:10, sep="_")
+
+# create placebo df
+placebo_df <- data.frame(
+  patient = placebo_names,
+  pre_bp = pre_placebo_bp,
+  post_bp = post_placebo_bp,
+  diff_bp = placebo_diff
+)
+
+#add column for optimal bp 
+placebo_df$healthy_bp <- placebo_df$post_bp <120
+
+placebo_df
+```
+
+**2)** Now create and store a list with two elements:
+
+-   1st element named treatment and contains the first data frame you created.
+
+-   2nd element named placebo and contains the second data frame you created
+
+```{r}
+
+# Create list with treatment and placebo df
+bp_list <- list(treatment = bp_df,
+                placebo = placebo_df)
+bp_list
+```
+
+**3)** Access the first list element using three different types of syntax
+
+```{r}
+# access using df literal name
+bp_list$treatment
+
+# access using df position
+bp_list[[1]]
+
+# access using df name
+bp_list[["treatment"]]
+```
+
+**4)** In one line, access the placebo data frame, pre_bp column
+
+```{r}
+# access pre_bp column in placebo df
+bp_list$placebo$pre_bp
+```
+
+------------------------------------------------------------------------
+
+## **Task 4: Control Flow Practice**
+
+**1)** Suppose we want to characterize the post-treatment (or placebo) blood pressure measurement as optimal (≤ 120), borderline (120 \< bp ≤ 130), and high (\> 130). First, create a new column in each data frame from above called status.
+
+```{r}
+
+# Create new empty column 'status' for treatment and placebo data
+bp_list$treatment$status <- character(20)
+bp_list$placebo$status <- character(10)
+
+bp_list$treatment
+bp_list$placebo
+```
+
+**2)** For the non-placebo data frame (within the list), create a for loop and use if/then/else logic to create the status column’s values.
+
+```{r}
+
+# assign values to the status column by classifying bp for treatment df
+for (i in 1:20) {
+  if (bp_list$treatment$post_bp[i] <= 120) {
+    bp_list$treatment$status[i] <- "optimal"
+  }
+  else if (bp_list$treatment$post_bp[i] <= 130) {
+    bp_list$treatment$status[i] <- "borderline"
+  } else {
+    bp_list$treatment$status[i] <- "high"
+  }
+}
+bp_list$treatment
+
+```
+
+**3)**Repeat for the placebo data frame (within the list)
+
+```{r}
+
+# assign values to the status column by classifying bp for placebo df
+for (i in 1:10) {
+  if (bp_list$placebo$post_bp[i] <= 120) {
+    bp_list$placebo$status[i] <- "optimal"
+  }
+  else if (bp_list$placebo$post_bp[i] <= 130) {
+    bp_list$placebo$status[i] <- "borderline"
+  } else {
+    bp_list$placebo$status[i] <- "high"
+  }
+}
+bp_list$placebo
+```

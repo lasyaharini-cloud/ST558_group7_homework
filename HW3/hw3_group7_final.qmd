@@ -1,0 +1,172 @@
+---
+title: "hw3_group7_FINAL"
+format: html
+editor: visual
+---
+
+# TASK ONE
+
+- If your working directory is myfolder/homework/, what relative path would you specify to get the file located at myfolder/MyData.csv?
+  - The relative path would be '../MyData.csv'.
+- What are the major benefits of using R projects?
+  - R projects allow you to divide a task into multiple contexts, each with their own working directories and workspaces.
+  - This also allows relative paths to work.
+- What is Git and what is GitHub?
+  - Git is a version control software that lets you track changes made to a file over time.
+  - Github is a hosting service that allows you to store Git-based projects.
+- What are the two main differences between a tibble and a data.frame?
+  - Tibbles print data in a more appealing way.
+  - Tibbles don't coerce data down into a vector when subsetting to one column.
+
+# TASK TWO
+
+1.  Read this data into R directly from the URL using functions from the tidyverse. Notice that the data doesn’t include column names - add those (in a manner of your choosing). Print out the tibble (just call the object name).
+
+    ```{r}
+    library(tidyverse)
+    glass_data <- read_csv(
+      "https://www4.stat.ncsu.edu/~online/datasets/glass.data",
+      col_names = c("Id","RI","Na","Mg","Al","Si","K","Ca","Ba","Fe","Type")
+    )
+    glass_data
+    ```
+
+2.  Read this data into R directly from the URL using functions from the tidyverse. Notice that the data doesn’t include column names - add those (in a manner of your choosing). Print out the tibble (just call the object name).
+
+    ```{r}
+    yeast_data <- read_table(
+      "https://www4.stat.ncsu.edu/~online/datasets/yeast.data",
+      col_names = c("seq_name", "mcg","gvh", "alm","mit","erl","pox","vac","nuc","class")
+    )
+    yeast_data
+    ```
+
+# TASK THREE
+
+3.  There is an excel version of the white wine data set available at https://www4.stat.ncsu.edu/\~online/datasets/white-wine.xlsx. • Download this file • Place it in a folder you know (such as your working directory for your project, the folder your .qmd file lives in, a data folder you’ve created in your repo, etc.) • Import the data from the first sheet using the readxl package • Print out the tibble (just call the object name)
+
+    ```{r}
+    library(readxl)
+    white_wine_data <- read_excel("data/white-wine.xlsx")
+    white_wine_data
+    ```
+
+4.  When you print the data set out to the console, you may notice that some of the variable names are surrounded by backticks. This is because they are non-standard (they include a space in them). We can rename them in a number of ways. We’ll do it by reading in the variable names from the 2nd sheet of the same file.
+
+    • Read in the data from the 2nd sheet. This should return a data frame with one column containing alternative versions of the variable names. • Grab that column and overwrite the current column names (colnames()) of your white wine tibble. Note that colnames(object) allows for ‘left hand side assignment’. That is, you can call it on the left and store an object in it to overwrite it. Similar to names(object) \<- c(...)
+
+    ```{r}
+    #Reading in second sheet
+    column_names <- read_excel('white-wine.xlsx',
+                              sheet = excel_sheets('white-wine.xlsx')[2])
+    column_names
+
+    #Changing column names
+    colnames(white_wine_data) <- column_names$Variables
+    white_wine_data
+    ```
+
+5.  Lastly, add a column to this data set to indicate the wines are white. That is, add a column that has values of ‘white’ for every observation. You can do this via the \$ operator or, if you know it already, the mutate() function from dplyr.
+
+    ```{r}
+    white_wine_data$color <- "WHITE"
+    white_wine_data
+    ```
+
+6.  There is a semi-colon delimited version of the red wine data set available at https://www4.stat.ncsu.edu/\~online/datasets/red-wine.csv. • Read this in using the readr package. Be careful that the columns are read in as the correct type! • You should replace the variable names as done above • You should append a column denoting the type as “red”
+
+    ```{r}
+    #Reading in data
+    red_wine_data <- read_delim("data/red-wine.csv", delim= ";")
+
+    #Changing column names
+    colnames(red_wine_data) <- column_names$Variables
+
+    #Adding color column
+    red_wine_data$color <- 'RED'
+    red_wine_data
+    ```
+
+7.  Combine these two data sets into one data set. They both have the exact same columns so this is an easy append task! • Use the dplyr::bind_rows() function (see the help) to create one tibble containing all of the wine data.
+
+    ```{r}
+    combined_wine <- bind_rows(white_wine_data, red_wine_data)
+    combined_wine
+    ```
+
+# TASK FOUR
+
+8.  Write a basic function (call it getIQR) that takes in a vector of numbers and returns the interquartile range (75th percentile - 25th percentile). You can use the quantile function. Remove the name on the returned vector (i.e. make sure the returned item doesn’t have a name like 75% or something like that). Allow your function to pass unnamed arguments to the quantile function.
+
+    ```{r}
+    getIQR <- function(x,...){
+      quantile(x, probs = 0.75, names= FALSE, ...) - quantile(x, probs = .25, names= FALSE, ...)
+    }
+    ```
+
+9.  Take the object from question 7 and apply the getIRQ() function to the fixed_acidity and citric_acid columns (two function calls).
+
+    ```{r}
+    #Getting IQR for fixed acidity
+    getIQR(combined_wine$fixed_acidity)
+
+    #Getting IQR for citric acid
+    getIQR(combined_wine$citric_acid)
+    ```
+
+10. Write another function (call it getCoefVar) that returns the sample coefficient of variation, defined as the sample standard deviation divided by the absolute value of the sample mean. Allow the function to pass unnamed arguments to sd and mean.
+
+    ```{r}
+    getCoefVar <- function(x,...){
+      sd(x,...)/abs(mean(x,...))
+    }
+    ```
+
+<!-- -->
+
+11. Repeat question 9 using the getCoefVar() function.
+
+    ```{r}
+    #Getting coefficient of variation for fixed acidity
+    getCoefVar(combined_wine$fixed_acidity)
+
+    #Getting coefficient of variation for citric acid
+    getCoefVar(combined_wine$citric_acid)
+    ```
+
+<!-- -->
+
+12. Create a function (call it getSummaries) that takes in a vector and returns both the IQR and the coefficient of variation. Do not rewrite your above two functions, call them. When returning your values, give them appropriate names. (This would be called a wrapper function.)
+
+    ```{r}
+    getSummaries <- function(x,...){
+      c(IQR = getIQR(x,...), Coef = getCoefVar(x,...))
+    }
+    ```
+
+13. Repeat question 2 with the getSummaries() function.
+
+    ```{r}
+    #Getting summaries for fixed acidity
+    getSummaries(combined_wine$fixed_acidity)
+
+    #Getting summaries for citric acid
+    getSummaries(combined_wine$citric_acid)
+    ```
+
+<!-- -->
+
+14. Write your own infix function that can be used in replace of the cbind function (feel free to call the cbind function in your function :) Check that the function works on the two data frames below (df1 & df2) and then all three objects (df1, df2, vec1)!
+
+    ```{r}
+    `%cbind%` <- function(x,y){
+      cbind(x,y)
+    }
+
+    df1 <- data.frame(unif = runif(10), norm = rnorm(10))
+    df2 <- data.frame(gamma = rgamma(10, shape = 1), beta = rbeta(10, shape1 = 5, shape2 = 1))
+    vec1 <- rnorm(10, mean = 10)
+
+    df1 %cbind% df2
+    df1 %cbind% df2 %cbind% vec1
+    ```

@@ -1,0 +1,183 @@
+---
+title: "ST558_LBANKA_HW4"
+author: "LASYA HARINI BANKA"
+format: html
+editor: visual
+---
+
+**Task 1: Conceptual Questions**
+
+1.  Rewrite the following nested function call using baseR’s chaining operator:
+
+```{r}
+library(tidyverse)
+arrange(filter(select(as_tibble(iris), starts_with("Petal"), Species), Petal.Length <
+                 1.55), Species)
+```
+
+**Solution:**
+
+```{r}
+
+```
+
+2.  What is meant by long format data and wide format data? Which do we generally prefer for statistical analysis?
+
+    **Solution:**
+
+```{r}
+
+```
+
+**Task 2:**
+
+Note: Use chaining where possible!
+
+Glass data In HW 3 you read in the glass data from <https://www4.stat.ncsu.edu/~online/datasets/glass.data.> Let’s reread that data (use your code from HW 3) that also names the columns. Recall the last variable being Type of Glass with values of – 1 building_windows_float_processed, – 2 build- ing_windows_non_float_processed,–3vehicle_windows_float_processed,–4vehicle_windows_non_float_processed (none in this database), – 5 containers, – 6 tableware, – 7 headlamps.
+
+3.  Start a chain on your data object that overwrites the Type_of_glass variable using mutate(). • Create a factor version of the variable that replaces the numbers with string labels (that is, replace 1 with “building_windows_float_processed”, 2 with “building_win...”, etc. - see the variable descriptions above to give meaningful values). • This could also be done by first using an ifelse() type call and then converting to a factor. Either way is fine!
+
+**Solution:**
+
+```{r}
+
+```
+
+4\. Continue your chain and keep only observations where the Fe variable is less than 0.2 and the Type of Glass is either “tableware” or “headlamp”.
+
+**Solution:**
+
+```{r}
+
+```
+
+**Yeast data**
+
+In HW 3 you read in the Yeast data from <https://www4.stat.ncsu.edu/~online/datasets/yeast.data.> Read this data into R directly from the URL, adding column names as well.
+
+5\. Start a chain that removes the seq_name and nuc columns.
+
+**Solution:**
+
+```{r}
+
+```
+
+6\. Continue your chain to add columns corresponding to the mean and median of each numeric variable (mcg, gvh, alm, mit, erl, pox, and vac) at each class grouping (see the across() function as we did in the dplyr video!).
+
+**Solution:**
+
+```{r}
+
+```
+
+**Wine Data**
+
+In HW 3 you read in two data sets on wine. Read those two in and combine them as was done there.
+
+7\. Start a chain on your new combined data object to filter the data to only look at high-quality wines (quality \> 6.5) and wines that have a reasonable alcohol value (alcohol \< 132).
+
+**Solution:**
+
+```{r}
+
+```
+
+8\. Continue your chain to now sort the data from highest quality to lowest.
+
+**Solution:**
+
+```{r}
+
+```
+
+9\. Continue your chain to select only the variables that contain acid, the alcohol variable, the type variable, and the quality variable.
+
+**Solution:**
+
+```{r}
+
+```
+
+10\. Continue your chain to add the mean and standard deviation of the alcohol variable to the data set for each setting of the quality variable.
+
+**Solution:**
+
+```{r}
+
+```
+
+**Task 3: Database Practice**
+
+Download the Lahman.db file associated with the Connecting to Databases notes/video.
+
+11\. Connect to the database and then look at all of the tables in the database.
+
+**Solution:**
+
+```{r}
+
+```
+
+12\. Use the tbl() function and dplyr to return all of the data from the Teams table for the year 2015.
+
+**Solution:**
+
+```{r}
+
+```
+
+13\. Repeat the above by using the sql() function within tbl() (here you have to write actual SQL!). Either use dplyr or write SQL queries for the rest of these questions!
+
+**Solution:**
+
+```{r}
+
+```
+
+14\. Return all of the players in the hall of fame, the year they were voted into the hall of fame, and their category (only those three variables!). See the HallOfFame table, the inducted variable is important here.
+
+**Solution:**
+
+```{r}
+
+```
+
+15\. Combine the table from the previous question with the People table in order to have the nameFirst and nameLast names added to what was returned above.
+
+**Solution:**
+
+```{r}
+
+```
+
+16\. Return only the playerID (manager ID in this case), G, W, and L columns from the Managers table. Use chaining to then:
+
+• Determine the overall win/loss records (sum of wins and sum of losses) for each of these hall of fame managers. – We haven’t quite covered this so I’ll help out. We want to use group_by() with summarize() rather than mutate(). Something like this:
+
+```{r}
+tbl(con, "Managers") |>
+  select(...) |>
+  group_by(playerID) |>
+  summarize(G_managed = sum(G, na.rm = TRUE),
+            Total_W = sum(W, na.rm = TRUE),
+            Total_L = sum(L, na.rm = TRUE))
+```
+
+• Create a new variable that is the career win/loss percentage (Total_W/G_managed). (Note: I did this after collect() otherwise the column type has to be set...)
+
+• Sort the resulting data by the win/loss percentage variable (from largest to smallest).
+
+**Solution:**
+
+```{r}
+
+```
+
+17\. Use the results from the previous two questions to answer this one! Return information for only the people that managed a team and were inducted into the hall of fame (regardless of their category in the hall of fame - you want to return all people in the hall of fame that ever managed at all). (Just return all of the variables from both of the above two questions - 9 total columns)
+
+**Solution:**
+
+```{r}
+
+```
