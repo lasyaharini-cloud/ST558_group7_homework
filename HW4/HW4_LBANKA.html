@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="LASYA HARINI BANKA">
+
+<title>ST558_LBANKA_HW4</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="HW4_LBANKA_files/libs/clipboard/clipboard.min.js"></script>
+<script src="HW4_LBANKA_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="HW4_LBANKA_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="HW4_LBANKA_files/libs/quarto-html/popper.min.js"></script>
+<script src="HW4_LBANKA_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="HW4_LBANKA_files/libs/quarto-html/anchor.min.js"></script>
+<link href="HW4_LBANKA_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="HW4_LBANKA_files/libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="HW4_LBANKA_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="HW4_LBANKA_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="HW4_LBANKA_files/libs/bootstrap/bootstrap-138a6193a3bd40baf1e627da441a4734.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">ST558_LBANKA_HW4</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>LASYA HARINI BANKA </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p><strong>Task 1: Conceptual Questions</strong></p>
+<ol type="1">
+<li>Rewrite the following nested function call using baseR’s chaining operator:</li>
+</ol>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.2.0     ✔ readr     2.1.5
+✔ forcats   1.0.1     ✔ stringr   1.5.2
+✔ ggplot2   4.0.2     ✔ tibble    3.3.0
+✔ lubridate 1.9.4     ✔ tidyr     1.3.1
+✔ purrr     1.1.0     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">arrange</span>(<span class="fu">filter</span>(<span class="fu">select</span>(<span class="fu">as_tibble</span>(iris), <span class="fu">starts_with</span>(<span class="st">"Petal"</span>), Species), Petal.Length <span class="sc">&lt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>                 <span class="fl">1.55</span>), Species)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 37 × 3
+   Petal.Length Petal.Width Species
+          &lt;dbl&gt;       &lt;dbl&gt; &lt;fct&gt;  
+ 1          1.4         0.2 setosa 
+ 2          1.4         0.2 setosa 
+ 3          1.3         0.2 setosa 
+ 4          1.5         0.2 setosa 
+ 5          1.4         0.2 setosa 
+ 6          1.4         0.3 setosa 
+ 7          1.5         0.2 setosa 
+ 8          1.4         0.2 setosa 
+ 9          1.5         0.1 setosa 
+10          1.5         0.2 setosa 
+# ℹ 27 more rows</code></pre>
+</div>
+</div>
+<p><strong>Solution:</strong></p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert the iris data to a tibble and sorting the results by species</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>iris <span class="sc">|&gt;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="fu">starts_with</span>(<span class="st">"Petal"</span>), Species) <span class="sc">|&gt;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Petal.Length <span class="sc">&lt;</span> <span class="fl">1.55</span>) <span class="sc">|&gt;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(Species)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Petal.Length Petal.Width Species
+1           1.4         0.2  setosa
+2           1.4         0.2  setosa
+3           1.3         0.2  setosa
+4           1.5         0.2  setosa
+5           1.4         0.2  setosa
+6           1.4         0.3  setosa
+7           1.5         0.2  setosa
+8           1.4         0.2  setosa
+9           1.5         0.1  setosa
+10          1.5         0.2  setosa
+11          1.4         0.1  setosa
+12          1.1         0.1  setosa
+13          1.2         0.2  setosa
+14          1.5         0.4  setosa
+15          1.3         0.4  setosa
+16          1.4         0.3  setosa
+17          1.5         0.3  setosa
+18          1.5         0.4  setosa
+19          1.0         0.2  setosa
+20          1.5         0.2  setosa
+21          1.4         0.2  setosa
+22          1.5         0.4  setosa
+23          1.5         0.1  setosa
+24          1.4         0.2  setosa
+25          1.5         0.2  setosa
+26          1.2         0.2  setosa
+27          1.3         0.2  setosa
+28          1.4         0.1  setosa
+29          1.3         0.2  setosa
+30          1.5         0.2  setosa
+31          1.3         0.3  setosa
+32          1.3         0.3  setosa
+33          1.3         0.2  setosa
+34          1.4         0.3  setosa
+35          1.4         0.2  setosa
+36          1.5         0.2  setosa
+37          1.4         0.2  setosa</code></pre>
+</div>
+</div>
+<ol start="2" type="1">
+<li><p>What is meant by long format data and wide format data? Which do we generally prefer for statistical analysis?</p>
+<p><strong>Solution:</strong></p>
+<p>Long format is known as tidy format, since it has each row representing a single observation and each variable in its own column. This is preffered for statistical analysis because it makes data easier to filter, group and analyze. Wide format has each row representing one unit, with its different measurements across multiple columns.</p></li>
+</ol>
+<p><strong>Task 2:</strong></p>
+<p>Note: Use chaining where possible!</p>
+<p>Glass data In HW 3 you read in the glass data from <a href="https://www4.stat.ncsu.edu/~online/datasets/glass.data." class="uri">https://www4.stat.ncsu.edu/~online/datasets/glass.data.</a> Let’s reread that data (use your code from HW 3) that also names the columns. Recall the last variable being Type of Glass with values of – 1 building_windows_float_processed, – 2 build- ing_windows_non_float_processed,–3vehicle_windows_float_processed,–4vehicle_windows_non_float_processed (none in this database), – 5 containers, – 6 tableware, – 7 headlamps.</p>
+<ol start="3" type="1">
+<li><p>Start a chain on your data object that overwrites the Type_of_glass variable using mutate().</p>
+<p>• Create a factor version of the variable that replaces the numbers with string labels (that is, replace 1 with “building_windows_float_processed”, 2 with “building_win…”, etc. - see the variable descriptions above to give meaningful values).</p>
+<p>• This could also be done by first using an ifelse() type call and then converting to a factor. Either way is fine!</p></li>
+</ol>
+<p><strong>Solution:</strong></p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the glass data from the URL and add column names</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>glass <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"https://www4.stat.ncsu.edu/~online/datasets/glass.data"</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">col.names =</span> <span class="fu">c</span>(</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"ID"</span>, <span class="st">"RI"</span>, <span class="st">"Na"</span>, <span class="st">"Mg"</span>, <span class="st">"Al"</span>, <span class="st">"Si"</span>, <span class="st">"K"</span>, <span class="st">"Ca"</span>, <span class="st">"Ba"</span>, <span class="st">"Fe"</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Type_of_glass"</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Change the glass type numbers into meaningful labels</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>glass <span class="ot">&lt;-</span> glass <span class="sc">|&gt;</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">Type_of_glass =</span> <span class="fu">factor</span>(</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>      Type_of_glass,</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>      <span class="at">levels =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">7</span>,</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>      <span class="at">labels =</span> <span class="fu">c</span>(</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>        <span class="st">"building_windows_float_processed"</span>,</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>        <span class="st">"building_windows_non_float_processed"</span>,</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>        <span class="st">"vehicle_windows_float_processed"</span>,</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>        <span class="st">"vehicle_windows_non_float_processed"</span>,</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>        <span class="st">"containers"</span>,</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>        <span class="st">"tableware"</span>,</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>        <span class="st">"headlamps"</span></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>4. Continue your chain and keep only observations where the Fe variable is less than 0.2 and the Type of Glass is either “tableware” or “headlamp”.</p>
+<p><strong>Solution:</strong></p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>glass <span class="sc">|&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    Fe <span class="sc">&lt;</span> <span class="fl">0.2</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    Type_of_glass <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"tableware"</span>, <span class="st">"headlamps"</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    ID      RI    Na   Mg   Al    Si    K    Ca   Ba   Fe Type_of_glass
+1  177 1.51905 14.00 2.39 1.56 72.37 0.00  9.57 0.00 0.00     tableware
+2  178 1.51937 13.79 2.41 1.19 72.76 0.00  9.77 0.00 0.00     tableware
+3  179 1.51829 14.46 2.24 1.62 72.38 0.00  9.26 0.00 0.00     tableware
+4  180 1.51852 14.09 2.19 1.66 72.67 0.00  9.32 0.00 0.00     tableware
+5  181 1.51299 14.40 1.74 1.54 74.55 0.00  7.59 0.00 0.00     tableware
+6  182 1.51888 14.99 0.78 1.74 72.50 0.00  9.95 0.00 0.00     tableware
+7  183 1.51916 14.15 0.00 2.09 72.74 0.00 10.88 0.00 0.00     tableware
+8  184 1.51969 14.56 0.00 0.56 73.48 0.00 11.22 0.00 0.00     tableware
+9  185 1.51115 17.38 0.00 0.34 75.41 0.00  6.65 0.00 0.00     tableware
+10 186 1.51131 13.69 3.20 1.81 72.81 1.76  5.43 1.19 0.00     headlamps
+11 187 1.51838 14.32 3.26 2.22 71.25 1.46  5.79 1.63 0.00     headlamps
+12 188 1.52315 13.44 3.34 1.23 72.38 0.60  8.83 0.00 0.00     headlamps
+13 189 1.52247 14.86 2.20 2.06 70.26 0.76  9.76 0.00 0.00     headlamps
+14 190 1.52365 15.79 1.83 1.31 70.43 0.31  8.61 1.68 0.00     headlamps
+15 191 1.51613 13.88 1.78 1.79 73.10 0.00  8.67 0.76 0.00     headlamps
+16 192 1.51602 14.85 0.00 2.38 73.28 0.00  8.76 0.64 0.09     headlamps
+17 193 1.51623 14.20 0.00 2.79 73.46 0.04  9.04 0.40 0.09     headlamps
+18 194 1.51719 14.75 0.00 2.00 73.02 0.00  8.53 1.59 0.08     headlamps
+19 195 1.51683 14.56 0.00 1.98 73.29 0.00  8.52 1.57 0.07     headlamps
+20 196 1.51545 14.14 0.00 2.68 73.39 0.08  9.07 0.61 0.05     headlamps
+21 197 1.51556 13.87 0.00 2.54 73.23 0.14  9.41 0.81 0.01     headlamps
+22 198 1.51727 14.70 0.00 2.34 73.28 0.00  8.95 0.66 0.00     headlamps
+23 199 1.51531 14.38 0.00 2.66 73.10 0.04  9.08 0.64 0.00     headlamps
+24 200 1.51609 15.01 0.00 2.51 73.05 0.05  8.83 0.53 0.00     headlamps
+25 201 1.51508 15.15 0.00 2.25 73.50 0.00  8.34 0.63 0.00     headlamps
+26 202 1.51653 11.95 0.00 1.19 75.18 2.70  8.93 0.00 0.00     headlamps
+27 203 1.51514 14.85 0.00 2.42 73.72 0.00  8.39 0.56 0.00     headlamps
+28 204 1.51658 14.80 0.00 1.99 73.11 0.00  8.28 1.71 0.00     headlamps
+29 205 1.51617 14.95 0.00 2.27 73.30 0.00  8.71 0.67 0.00     headlamps
+30 206 1.51732 14.95 0.00 1.80 72.99 0.00  8.61 1.55 0.00     headlamps
+31 207 1.51645 14.94 0.00 1.87 73.11 0.00  8.67 1.38 0.00     headlamps
+32 208 1.51831 14.39 0.00 1.82 72.86 1.41  6.47 2.88 0.00     headlamps
+33 209 1.51640 14.37 0.00 2.74 72.85 0.00  9.45 0.54 0.00     headlamps
+34 210 1.51623 14.14 0.00 2.88 72.61 0.08  9.18 1.06 0.00     headlamps
+35 211 1.51685 14.92 0.00 1.99 73.06 0.00  8.40 1.59 0.00     headlamps
+36 212 1.52065 14.36 0.00 2.02 73.42 0.00  8.44 1.64 0.00     headlamps
+37 213 1.51651 14.38 0.00 1.94 73.61 0.00  8.48 1.57 0.00     headlamps
+38 214 1.51711 14.23 0.00 2.08 73.36 0.00  8.62 1.67 0.00     headlamps</code></pre>
+</div>
+</div>
+<p><strong>Yeast data</strong></p>
+<p>In HW 3 you read in the Yeast data from <a href="https://www4.stat.ncsu.edu/~online/datasets/yeast.data." class="uri">https://www4.stat.ncsu.edu/~online/datasets/yeast.data.</a> Read this data into R directly from the URL, adding column names as well.</p>
+<p>5. Start a chain that removes the seq_name and nuc columns.</p>
+<p><strong>Solution:</strong></p>
+<p>6. Continue your chain to add columns corresponding to the mean and median of each numeric variable (mcg, gvh, alm, mit, erl, pox, and vac) at each class grouping (see the across() function as we did in the dplyr video!).</p>
+<p><strong>Solution:</strong></p>
+<p><strong>Wine Data</strong></p>
+<p>In HW 3 you read in two data sets on wine. Read those two in and combine them as was done there.</p>
+<p>7. Start a chain on your new combined data object to filter the data to only look at high-quality wines (quality &gt; 6.5) and wines that have a reasonable alcohol value (alcohol &lt; 132).</p>
+<p><strong>Solution:</strong></p>
+<p>8. Continue your chain to now sort the data from highest quality to lowest.</p>
+<p><strong>Solution:</strong></p>
+<p>9. Continue your chain to select only the variables that contain acid, the alcohol variable, the type variable, and the quality variable.</p>
+<p><strong>Solution:</strong></p>
+<p>10. Continue your chain to add the mean and standard deviation of the alcohol variable to the data set for each setting of the quality variable.</p>
+<p><strong>Solution:</strong></p>
+<p><strong>Task 3: Database Practice</strong></p>
+<p>Download the Lahman.db file associated with the Connecting to Databases notes/video.</p>
+<p>11. Connect to the database and then look at all of the tables in the database.</p>
+<p><strong>Solution:</strong></p>
+<p>12. Use the tbl() function and dplyr to return all of the data from the Teams table for the year 2015.</p>
+<p><strong>Solution:</strong></p>
+<p>13. Repeat the above by using the sql() function within tbl() (here you have to write actual SQL!). Either use dplyr or write SQL queries for the rest of these questions!</p>
+<p><strong>Solution:</strong></p>
+<p>14. Return all of the players in the hall of fame, the year they were voted into the hall of fame, and their category (only those three variables!). See the HallOfFame table, the inducted variable is important here.</p>
+<p><strong>Solution:</strong></p>
+<p>15. Combine the table from the previous question with the People table in order to have the nameFirst and nameLast names added to what was returned above.</p>
+<p><strong>Solution:</strong></p>
+<p>16. Return only the playerID (manager ID in this case), G, W, and L columns from the Managers table. Use chaining to then:</p>
+<p>• Determine the overall win/loss records (sum of wins and sum of losses) for each of these hall of fame managers. – We haven’t quite covered this so I’ll help out. We want to use group_by() with summarize() rather than mutate().</p>
+<p>• Create a new variable that is the career win/loss percentage (Total_W/G_managed). (Note: I did this after collect() otherwise the column type has to be set…)</p>
+<p>• Sort the resulting data by the win/loss percentage variable (from largest to smallest).</p>
+<p><strong>Solution:</strong></p>
+<p>17. Use the results from the previous two questions to answer this one! Return information for only the people that managed a team and were inducted into the hall of fame (regardless of their category in the hall of fame - you want to return all people in the hall of fame that ever managed at all). (Just return all of the variables from both of the above two questions - 9 total columns)</p>
+<p><strong>Solution:</strong></p>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

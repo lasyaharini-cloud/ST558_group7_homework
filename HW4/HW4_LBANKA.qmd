@@ -18,16 +18,20 @@ arrange(filter(select(as_tibble(iris), starts_with("Petal"), Species), Petal.Len
 **Solution:**
 
 ```{r}
+library(tidyverse)
 
+# Convert the iris data to a tibble and sorting the results by species
+iris |>
+  select(starts_with("Petal"), Species) |>
+  filter(Petal.Length < 1.55) |>
+  arrange(Species)
 ```
 
 2.  What is meant by long format data and wide format data? Which do we generally prefer for statistical analysis?
 
     **Solution:**
 
-```{r}
-
-```
+    Long format is known as tidy format, since it has each row representing a single observation and each variable in its own column. This is preffered for statistical analysis because it makes data easier to filter, group and analyze. Wide format has each row representing one unit, with its different measurements across multiple columns.
 
 **Task 2:**
 
@@ -35,12 +39,43 @@ Note: Use chaining where possible!
 
 Glass data In HW 3 you read in the glass data from <https://www4.stat.ncsu.edu/~online/datasets/glass.data.> Let’s reread that data (use your code from HW 3) that also names the columns. Recall the last variable being Type of Glass with values of – 1 building_windows_float_processed, – 2 build- ing_windows_non_float_processed,–3vehicle_windows_float_processed,–4vehicle_windows_non_float_processed (none in this database), – 5 containers, – 6 tableware, – 7 headlamps.
 
-3.  Start a chain on your data object that overwrites the Type_of_glass variable using mutate(). • Create a factor version of the variable that replaces the numbers with string labels (that is, replace 1 with “building_windows_float_processed”, 2 with “building_win...”, etc. - see the variable descriptions above to give meaningful values). • This could also be done by first using an ifelse() type call and then converting to a factor. Either way is fine!
+3.  Start a chain on your data object that overwrites the Type_of_glass variable using mutate().
+
+    • Create a factor version of the variable that replaces the numbers with string labels (that is, replace 1 with “building_windows_float_processed”, 2 with “building_win...”, etc. - see the variable descriptions above to give meaningful values).
+
+    • This could also be done by first using an ifelse() type call and then converting to a factor. Either way is fine!
 
 **Solution:**
 
 ```{r}
+# Read the glass data from the URL and add column names
+library(tidyverse)
 
+glass <- read.csv(
+  "https://www4.stat.ncsu.edu/~online/datasets/glass.data",
+  col.names = c(
+    "ID", "RI", "Na", "Mg", "Al", "Si", "K", "Ca", "Ba", "Fe",
+    "Type_of_glass"
+  )
+)
+
+# Change the glass type numbers into meaningful labels
+glass <- glass |>
+  mutate(
+    Type_of_glass = factor(
+      Type_of_glass,
+      levels = 1:7,
+      labels = c(
+        "building_windows_float_processed",
+        "building_windows_non_float_processed",
+        "vehicle_windows_float_processed",
+        "vehicle_windows_non_float_processed",
+        "containers",
+        "tableware",
+        "headlamps"
+      )
+    )
+  )
 ```
 
 4\. Continue your chain and keep only observations where the Fe variable is less than 0.2 and the Type of Glass is either “tableware” or “headlamp”.
@@ -48,7 +83,11 @@ Glass data In HW 3 you read in the glass data from <https://www4.stat.ncsu.edu/~
 **Solution:**
 
 ```{r}
-
+glass |>
+  filter(
+    Fe < 0.2,
+    Type_of_glass %in% c("tableware", "headlamps")
+  )
 ```
 
 **Yeast data**
@@ -153,16 +192,7 @@ Download the Lahman.db file associated with the Connecting to Databases notes/vi
 
 16\. Return only the playerID (manager ID in this case), G, W, and L columns from the Managers table. Use chaining to then:
 
-• Determine the overall win/loss records (sum of wins and sum of losses) for each of these hall of fame managers. – We haven’t quite covered this so I’ll help out. We want to use group_by() with summarize() rather than mutate(). Something like this:
-
-```{r}
-tbl(con, "Managers") |>
-  select(...) |>
-  group_by(playerID) |>
-  summarize(G_managed = sum(G, na.rm = TRUE),
-            Total_W = sum(W, na.rm = TRUE),
-            Total_L = sum(L, na.rm = TRUE))
-```
+• Determine the overall win/loss records (sum of wins and sum of losses) for each of these hall of fame managers. – We haven’t quite covered this so I’ll help out. We want to use group_by() with summarize() rather than mutate().
 
 • Create a new variable that is the career win/loss percentage (Total_W/G_managed). (Note: I did this after collect() otherwise the column type has to be set...)
 
