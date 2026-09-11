@@ -101,10 +101,10 @@ yeast_df |> group_by(class) |> mutate(
 library(readxl)
 
 # read in white wine csv and create df
-white_wine_df <- read_excel("../data/white-wine.xlsx")
+white_wine_df <- read_excel("data/white-wine.xlsx")
 
 # get col names from the second sheet in white wine dataset
-wine_col_names <- read_xlsx("../data/white-wine.xlsx", sheet = excel_sheets("../data/white-wine.xlsx")[2])
+wine_col_names <- read_xlsx("data/white-wine.xlsx", sheet = excel_sheets("data/white-wine.xlsx")[2])
 
 wine_col_names
 
@@ -164,7 +164,7 @@ full_wine_df |> group_by(quality) |> mutate(mean_alcohol = mean(alcohol),sd_alco
 ```{r}
 library(DBI)
 # connect to the db
-con <- dbConnect(RSQLite::SQLite(), "../data/lahman.db")
+con <- dbConnect(RSQLite::SQLite(), "data/lahman.db")
 dbListTables(con)
 ```
 
