@@ -144,21 +144,21 @@ library(readxl)
 
 # Read the white wine data
 white_wine_data <- read_excel(
-  "/Users/lasya/Desktop/Masters/SEM 3/ST558/HW3/data/white-wine.xlsx"
+  "../HW4/data/white-wine.xlsx"
 )
 
 # Read the column names from the second sheet
 column_names <- read_excel(
-  "/Users/lasya/Desktop/Masters/SEM 3/ST558/HW3/data/white-wine.xlsx",
+  "./HW3/data/white-wine.xlsx",
   sheet = excel_sheets(
-    "/Users/lasya/Desktop/Masters/SEM 3/ST558/HW3/data/white-wine.xlsx"
+    "./HW4/data/white-wine.xlsx"
   )[2]
 )
 
 colnames(white_wine_data) <- column_names$Variables
 white_wine_data$color <- "WHITE"
 red_wine_data <- read_delim(
-  "/Users/lasya/Desktop/Masters/SEM 3/ST558/HW3/data/red-wine.csv",
+  "../HW4/data/red-wine.csv",
   delim = ";"
 )
 
