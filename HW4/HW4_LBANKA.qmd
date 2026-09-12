@@ -10,6 +10,7 @@ editor: visual
 1.  Rewrite the following nested function call using baseR’s chaining operator:
 
 ```{r}
+# Convert the iris data to a tibble and sorting the results by species
 library(tidyverse)
 arrange(filter(select(as_tibble(iris), starts_with("Petal"), Species), Petal.Length <
                  1.55), Species)
@@ -176,7 +177,7 @@ combined_wine <- bind_rows(
 wine_filtered <- combined_wine |>
   filter(
     quality > 6.5,
-    alcohol < 132
+    alcohol < 13.2
   )
 
 wine_filtered
@@ -236,7 +237,14 @@ Download the Lahman.db file associated with the Connecting to Databases notes/vi
 **Solution:**
 
 ```{r}
+# Load the packages and connect to Lahman database
+library(DBI)
+library(RSQLite)
+library(dplyr)
 
+con <- dbConnect(RSQLite::SQLite(), "data/lahman.db")
+
+dbListTables(con)
 ```
 
 12\. Use the tbl() function and dplyr to return all of the data from the Teams table for the year 2015.
@@ -244,6 +252,12 @@ Download the Lahman.db file associated with the Connecting to Databases notes/vi
 **Solution:**
 
 ```{r}
+# Access the Teams table from the database
+
+teams_2015 <- tbl(con, "Teams") |>
+  filter(yearID == 2015) |>
+  collect()
+teams_2015
 
 ```
 
@@ -252,6 +266,13 @@ Download the Lahman.db file associated with the Connecting to Databases notes/vi
 **Solution:**
 
 ```{r}
+# Use an SQL query to select all Teams data from 2015
+teams_2015_sql <- tbl(
+  con,
+  sql("SELECT * FROM Teams WHERE yearID = 2015")
+) |>
+  collect()
+teams_2015_sql
 
 ```
 
@@ -260,7 +281,13 @@ Download the Lahman.db file associated with the Connecting to Databases notes/vi
 **Solution:**
 
 ```{r}
+# Get the Hall of Fame table 
+hall_of_fame <- tbl(con, "HallOfFame") |>
+  filter(inducted == "Y") |>
+  select(playerID, yearID, category) |>
+  collect()
 
+hall_of_fame
 ```
 
 15\. Combine the table from the previous question with the People table in order to have the nameFirst and nameLast names added to what was returned above.
@@ -268,7 +295,14 @@ Download the Lahman.db file associated with the Connecting to Databases notes/vi
 **Solution:**
 
 ```{r}
+# Get the People table and keep the player ID and names
+people_names <- tbl(con, "People") |>
+  select(playerID, nameFirst, nameLast) |>
+  collect()
+hall_of_fame_names <- hall_of_fame |>
+  inner_join(people_names, by = "playerID")
 
+hall_of_fame_names
 ```
 
 16\. Return only the playerID (manager ID in this case), G, W, and L columns from the Managers table. Use chaining to then:
@@ -282,7 +316,22 @@ Download the Lahman.db file associated with the Connecting to Databases notes/vi
 **Solution:**
 
 ```{r}
+# Get the manager records and calculate career totals
+manager_records <- tbl(con, "Managers") |>
+  select(playerID, G, W, L) |>
+  group_by(playerID) |>
+  summarize(
+    G_managed = sum(G, na.rm = TRUE),
+    Total_W = sum(W, na.rm = TRUE),
+    Total_L = sum(L, na.rm = TRUE)
+  ) |>
+  collect() |>
+  mutate(
+    win_loss_pct = Total_W / G_managed
+  ) |>
+  arrange(desc(win_loss_pct))
 
+manager_records
 ```
 
 17\. Use the results from the previous two questions to answer this one! Return information for only the people that managed a team and were inducted into the hall of fame (regardless of their category in the hall of fame - you want to return all people in the hall of fame that ever managed at all). (Just return all of the variables from both of the above two questions - 9 total columns)
@@ -290,5 +339,9 @@ Download the Lahman.db file associated with the Connecting to Databases notes/vi
 **Solution:**
 
 ```{r}
+# Join the Hall of Fame information with the manager information and keeping only people who appear in both tables
 
+hof_managers <- hall_of_fame_names  |>
+  inner_join(manager_records, by = "playerID")
+hof_managers
 ```
