@@ -1,0 +1,219 @@
+---
+title: "hw4_bdevapa"
+format: html
+---
+
+# Task 1
+## Question 1 - function rewrite
+
+```{r}
+#1
+library(dplyr)
+
+iris_tbl <- as_tibble(iris)
+iris_tbl |>
+  filter(Petal.Length < 1.55) |>
+  arrange(Species) |>
+  select(starts_with("Petal"), Species)
+```
+
+## Questions 2 - Long Format vs Wide Format Data and which one is preferred 
+
+Long Format: Each of the observation is a record 
+Wide Format: Multiple observations for the same subject maybe spread across multiple columns.
+Long Format is generally preferred for analysis and visualization per lecture notes 
+
+
+# Task 2 -Chaining where possible 
+
+## Question 3 & 4 - Glass Data
+
+```{r}
+
+library(dplyr)
+
+# glass_data is already a tibble 
+
+glass_data_tbl <- read_delim("https://www4.stat.ncsu.edu/~online/datasets/glass.data",
+                         delim = ",",
+                         col_names = c("Id","RI","Na","Mg","Al","Si","K","Ca","Ba","Fe","Type of Glass"))
+
+glass_data_tbl |>
+  mutate (Type_of_glass = factor(ifelse(`Type of Glass` == 1, "building_windows_float_processed", 
+                                         ifelse(`Type of Glass` == 2, "building_windows_non_float_processed",
+                                                ifelse(`Type of Glass` == 3, "vehicle_windows_float_processed",
+                                                       ifelse(`Type of Glass` == 4, "vehicle_windows_non_float_processed",
+                                                              ifelse(`Type of Glass` == 5, "containers",
+                                                                     ifelse(`Type of Glass` == 6, "tableware",
+                                                                          ifelse(`Type of Glass` == 7, "headlamps",  "unknown"
+                                                                     ))))))))) |>
+  filter(Fe < 0.2, Type_of_glass %in% c("tableware", "headlamps")) |>
+  select(everything())
+
+```
+## Question 5 & 6 - Yeast Data
+
+```{r}
+
+yeast_data_tbl <- read_fwf("https://www4.stat.ncsu.edu/~online/datasets/yeast.data",
+                         fwf_widths (c(12,6,6,6,6,6,6,6,6,3),
+                         c("seq_name","mcg","gvh","alm","mit","erl","pox","vac","nuc","class")))
+
+yeast_data_tbl |>
+  select(-c(seq_name,nuc)) |>
+  group_by(class) |>
+  mutate( #keeps original columns 
+    across(
+      everything(),
+      list(mean = mean, median = median)
+    )
+  ) |>
+  select(everything())
+
+```
+
+## Question 7, 8, 9 & 10 - Wine Data
+
+```{r}
+library(readxl)
+library(readr)
+
+white_wine_data <- read_excel("data/white-wine.xlsx")
+
+col_names_data <- read_excel("data/white-wine.xlsx", 
+                            sheet = excel_sheets("data/white-wine.xlsx")[2])
+colnames(white_wine_data) <- col_names_data$Variables
+white_wine_data$type <- c("white")
+
+#this file is not a CSV despite its csv file extension
+red_wine_data <- read_delim("data/red-wine.csv", delim=";")
+#total 12 columns 
+colnames(red_wine_data) <- col_names_data$Variables
+
+red_wine_data$type <- c("red")
+
+combined_wine_tbl <- dplyr::bind_rows(white_wine_data, red_wine_data)
+
+combined_wine_tbl |>
+  filter(quality > 6.5 , alcohol < 13.2) |>
+  arrange(desc(quality)) |>
+  select(everything()) |>
+  select(contains("acid"), alcohol, type, quality) |>
+  group_by(quality) |>
+  mutate( #keeps original columns 
+    across(
+      alcohol,
+      list(mean = mean, median = median)
+    )
+  ) |>
+  select(everything())
+
+```
+
+
+# Task 3: Database Practice
+
+## Questions: 11, 12, & 13
+
+```{r}
+library(DBI)
+con <- dbConnect(RSQLite::SQLite(), "data/lahman.db")
+dbListTables(con)
+
+tbl(con, "Teams")
+
+tbl(con,sql(
+  "
+  SELECT * FROM `Teams`
+  "
+))
+
+
+
+```
+
+
+## Questions: 14
+
+```{r}
+
+
+
+tbl(con,sql(
+  "
+  SELECT h.playerID, yearID, category  FROM HallOfFame as h
+  WHERE inducted = 'Y' 
+  "
+))
+
+
+
+```
+
+## Questions: 15
+
+```{r}
+
+
+
+tbl(con,sql(
+  "
+  SELECT p.playerID, `nameFirst`, `nameLast`, `yearID`, `category`  FROM `HallOfFame` as h
+  INNER JOIN `People` as p
+  ON h.playerID = p.playerID
+  WHERE `inducted` = 'Y' 
+  "
+))
+
+
+
+```
+
+## Questions: 16
+
+```{r}
+
+tbl(con,sql(
+  "
+  SELECT m.playerID, sum(G) as G_managed , sum(W) as Total_W, sum(L) as Total_L,
+         sum(W) * 1.0 /sum(L) as win_loss_ratio,  sum(W) * 100.0/sum(G) as career_win_loss_percentage
+  FROM  Managers as m
+  group by m.playerID
+  order by win_loss_ratio desc 
+  "
+))
+
+
+
+
+```
+
+
+## Questions: 17
+
+```{r}
+
+
+
+tbl(con,sql(
+  "
+      SELECT h.playerID, p.nameFirst, p.nameLast, h.yearID,
+             sum(G) as G_managed , sum(W) as Total_W, sum(L) as Total_L,
+         sum(W) * 1.0 /sum(L) as win_loss_ratio,  sum(W) * 100.0/sum(G) as career_win_loss_percentage
+      FROM HallOfFame as h
+       INNER JOIN `People` as p
+       ON h.playerID = p.playerID
+       JOIN  Managers as m
+      ON h.playerID =  m.playerID
+      WHERE h.inducted = 'Y' 
+      GROUP BY m.playerID
+      order by win_loss_ratio desc 
+  "
+))
+
+dbDisconnect(con)
+
+
+```
+
+
