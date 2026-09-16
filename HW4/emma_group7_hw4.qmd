@@ -200,7 +200,7 @@ combined_tables
 ```{r}
 
 manager_recs <- tbl(con, "Managers") |>
-  select(...) |>
+  select(playerID, G, L, W) |>
   group_by(playerID) |>
   summarize(G_managed = sum(G, na.rm = TRUE),
             Total_W = sum(W, na.rm = TRUE),
@@ -215,6 +215,6 @@ manager_recs
 
 ```{r}
 joined_managers <- combined_tables |>
-  inner_join(manager_recs, by = 'playerID')
+  inner_join(manager_recs, by = 'playerID', copy = 'temp-table')
 joined_managers
 ```
