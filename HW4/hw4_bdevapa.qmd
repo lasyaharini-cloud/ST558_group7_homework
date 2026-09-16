@@ -4,6 +4,7 @@ format: html
 ---
 
 # Task 1
+
 ## Question 1 - function rewrite
 
 ```{r}
@@ -17,14 +18,11 @@ iris_tbl |>
   select(starts_with("Petal"), Species)
 ```
 
-## Questions 2 - Long Format vs Wide Format Data and which one is preferred 
+## Questions 2 - Long Format vs Wide Format Data and which one is preferred
 
-Long Format: Each of the observation is a record 
-Wide Format: Multiple observations for the same subject maybe spread across multiple columns.
-Long Format is generally preferred for analysis and visualization per lecture notes 
+Long Format: Each of the observation is a record Wide Format: Multiple observations for the same subject maybe spread across multiple columns. Long Format is generally preferred for analysis and visualization per lecture notes
 
-
-# Task 2 -Chaining where possible 
+# Task 2 -Chaining where possible
 
 ## Question 3 & 4 - Glass Data
 
@@ -51,6 +49,7 @@ glass_data_tbl |>
   select(everything())
 
 ```
+
 ## Question 5 & 6 - Yeast Data
 
 ```{r}
@@ -110,7 +109,6 @@ combined_wine_tbl |>
 
 ```
 
-
 # Task 3: Database Practice
 
 ## Questions: 11, 12, & 13
@@ -131,7 +129,6 @@ tbl(con,sql(
 
 
 ```
-
 
 ## Questions: 14
 
@@ -188,7 +185,6 @@ tbl(con,sql(
 
 ```
 
-
 ## Questions: 17
 
 ```{r}
@@ -215,5 +211,3 @@ dbDisconnect(con)
 
 
 ```
-
-
