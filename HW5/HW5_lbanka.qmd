@@ -1,0 +1,158 @@
+---
+title: "ST588_HW5"
+author: "Lasya Harini Banka"
+format: html
+editor: visual
+---
+
+## TASK1:
+
+1.  Use GET() from the httr package to return information about a topic that you are interested in that has been in the news lately (store the result as an R object). Note: We can only look 30 days into the past with a free account.
+
+    **Solution:**
+
+    ```{r}
+    library(tidyverse)
+    library(httr)
+    my_key <- "aa35ff9aae27492487a1913dc1fc1e3a"
+
+    # Request recent technology news
+    news <- GET(
+      "https://newsapi.org/v2/everything",
+      query = list(
+        q = "technology",
+        from = "2026-09-01",
+        language = "en",
+        pageSize = 50,
+        apiKey = my_key
+      )
+    )
+
+    # Check if the request was successful
+    status_code(news)
+
+    ```
+
+    I searched NewsAPI for English-language articles about technology published since September 1, 2026. The response from the API was stored in news.
+
+2.  Parse what is returned and find your way to the data frame that has the actual article information in it (check content). Note the first column should be a list column!
+
+    **Solution:**
+
+    ```{r}
+    # Parse the API response
+    news_content <- content(
+      news,
+      as = "parsed",
+      simplifyVector = FALSE
+    )
+
+    # Look at the information returned
+    names(news_content)
+    # Get the article information
+    articles <- news_content$articles
+
+    # Look at the first article
+    articles[[1]]
+    ```
+
+    ```{r}
+    # Convert the article information into a tibble
+    article_df <- tibble(
+      source = map(articles, "source"),
+      author = map_chr(articles, "author", .default = NA_character_),
+      title = map_chr(articles, "title", .default = NA_character_),
+      description = map_chr(articles, "description", .default = NA_character_),
+      publishedAt = map_chr(articles, "publishedAt", .default = NA_character_)
+    )
+
+    # Check the structure
+    glimpse(article_df)
+    ```
+
+    I parsed the API response and extracted the article information into a tibble. The first column, source is a list column containing information about the source of each article.
+
+3.  Now write a quick function that allows the user to easily query this API. The inputs to the function should be the title/subject to search for (string), a time period to search from (string - you’ll search from that time until the present), and an API key.
+
+    **Solution:**
+
+    ```{r}
+    # Create a function to search NewsAPI
+    search_news <- function(subject, from_date, api_key) {
+      
+      # Send a request using the inputs provided
+      response <- GET(
+        "https://newsapi.org/v2/everything",
+        query = list(
+          q = subject,
+          from = from_date,
+          language = "en",
+          pageSize = 50,
+          apiKey = api_key
+        )
+      )
+      
+      # Stop if the API request fails
+      stop_for_status(response)
+      
+      # Parse the response
+      result <- content(
+        response,
+        as = "parsed",
+        simplifyVector = FALSE
+      )
+      
+      # Return the articles
+      result$articles
+    }
+    ```
+
+    ```{r}
+    # Search for data science news
+    data_science_news <- search_news(
+      subject = "data science",
+      from_date = "2026-09-01",
+      api_key = my_key
+    )
+
+    # Look at the first result
+    data_science_news[[1]]
+    ```
+
+    ```{r}
+    # Search for space news
+    space_news <- search_news(
+      subject = "space",
+      from_date = "2026-09-01",
+      api_key = my_key
+    )
+
+    # Look at the first result
+    space_news[[1]]
+    ```
+
+## TASK2:
+
+4.  Look at how the data is stored and see if everything makes sense.
+
+    **Solution:**
+
+5.  Document any missing values in the data.
+
+    **Solution:**
+
+6.  Create a one-way contingency table, a two-way contingency table, and a three-way contingency table for some of the factor variables you created previously. Use table() to accomplish this. • Interpret a number from each resulting table (that is, pick out a value produced and explain what that value means.)
+
+    **Solution:**
+
+7.  Create a conditional two-way table using table(). That is, condition on one variable’s setting and create a two-way table. Do this using two different methods: • Once, by subsetting the data (say with filter()) and then creating the two-way table • Once, by creating a three-way table and subsetting it
+
+    **Solution:**
+
+8.  Create a two-way contingency table using group_by() and summarize() from dplyr. Then use pivot_wider() to make the result look more like the output from table().
+
+    **Solution:**
+
+9.  Create a stacked bar graph and a side-by-side bar graph. Give relevant x and y labels, and a title for the plots.
+
+    **Solution:**
