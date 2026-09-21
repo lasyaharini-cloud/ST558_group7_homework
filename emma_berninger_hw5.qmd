@@ -95,3 +95,39 @@ epidemiology_article[[1]]
 ```
 
 # TASK TWO
+
+*Question 4*
+
+```{r}
+
+```
+
+*Question 5*
+
+```{r}
+
+```
+
+*Question 6*
+
+```{r}
+
+```
+
+*Question 7*
+
+```{r}
+
+```
+
+*Question 8*
+
+```{r}
+
+```
+
+*Question 9*
+
+```{r}
+
+```
