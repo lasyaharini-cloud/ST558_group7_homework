@@ -1,0 +1,97 @@
+---
+title: "emma_berninger_hw5"
+format: html
+editor: visual
+---
+
+# TASK ONE
+
+*Question 1*
+
+```{r}
+library(httr)
+library(tidyverse)
+
+key <- '97196a6e47d04457a6ffdf399f45a446'
+
+articles <- GET(
+  "https://newsapi.org/v2/everything",
+  query = list(
+    q = 'biology',
+    from = '2026-09-01',
+    language = 'en',
+    pagesize = 50,
+    apiKey = key
+  )
+)
+
+```
+
+*Question 2*
+
+```{r}
+articles_content <- content(
+  articles,
+  as = 'parsed',
+  simplifyVector = FALSE
+)
+
+names(articles_content)
+
+article_info <- articles_content$articles
+
+article_info[[1]]
+```
+
+```{r}
+article_tibble <- tibble(
+  source = map(article_info, 'source'),
+  author = map_chr(article_info, 'author', .default = NA_character_),
+  title = map_chr(article_info, 'title', .default = NA_character_),
+  description = map_chr(article_info, 'description', .default = NA_character_),
+  publishedAt = map_chr(article_info, 'publishedAt', .default = NA_character_)
+)
+
+str(article_tibble)
+```
+
+*Question 3*
+
+```{r}
+news_api_search <- function(subject, from_date, api_key){
+  API_article <- GET(
+    "https://newsapi.org/v2/everything",
+    query = list(
+      q = subject,
+      from = from_date,
+      language = 'en',
+      pageSize = 50,
+      apiKey = api_key
+    )
+  )
+  article_response <- content(
+    API_article,
+    as = 'parsed',
+    simplifyVector = FALSE
+  )
+  article_response$articles
+}
+
+physics_article <- API_article(
+  q = 'physics',
+  from = '2026-09-01',
+  apiKey = key
+)
+
+physics_article[[1]]
+
+epidemiology_article <- API_article(
+  q = 'epidemiology',
+  from = '2026-09-01',
+  apiKey = key
+)
+
+epidemiology_article[[1]]
+```
+
+# TASK TWO
