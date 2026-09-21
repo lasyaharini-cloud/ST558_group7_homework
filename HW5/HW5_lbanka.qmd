@@ -1,5 +1,5 @@
 ---
-title: "ST588_HW5"
+title: "ST558_HW5"
 author: "Lasya Harini Banka"
 format: html
 editor: visual
@@ -14,7 +14,7 @@ editor: visual
     ```{r}
     library(tidyverse)
     library(httr)
-    my_key <- "aa35ff9aae27492487a1913dc1fc1e3a"
+    my_key <- Sys.getenv("NEWS_API_KEY")
 
     # Request recent technology news
     news <- GET(
@@ -137,22 +137,156 @@ editor: visual
 
     **Solution:**
 
+    ```{r}
+    coasters <- read_csv(
+      "https://www4.stat.ncsu.edu/online/datasets/635USrollercoasters.csv",
+      show_col_types = FALSE
+    )
+    # Convert categorical variables to factors
+    coasters <- coasters |>
+      mutate(
+        State = as.factor(State),
+        `Census Region` = as.factor(`Census Region`),
+        AgeGroup = as.factor(AgeGroup),
+        Scale = as.factor(Scale),
+        Type = as.factor(Type),
+        Design = as.factor(Design),
+        `Inversions?` = as.factor(`Inversions?`),
+        Make = as.factor(Make)
+      )
+
+    # Check the structure after converting the variables
+    glimpse(coasters)
+    ```
+
+    The dataset has 635 roller coasters and 21 variables. I converted the categorical variables to factors, while boundary remains a character variable because it contains geographic information.
+
 5.  Document any missing values in the data.
 
     **Solution:**
+
+    ```{r}
+    missing_values <- colSums(is.na(coasters))
+
+    # Display the missing value counts
+    missing_values
+    ```
+
+    Missing values were found in TopSpeed (74), MaxHeight(8), Drop (128), Length (33), Duration (66), and Make (36). The remaining variables have no missing values.
 
 6.  Create a one-way contingency table, a two-way contingency table, and a three-way contingency table for some of the factor variables you created previously. Use table() to accomplish this. • Interpret a number from each resulting table (that is, pick out a value produced and explain what that value means.)
 
     **Solution:**
 
+    ```{r}
+    # One-way contingency table for age group
+    age_table <- table(coasters$AgeGroup)
+
+    age_table
+    ```
+
+    The one-way table shows that 376 roller coasters belong to the 3:Newest age group.
+
+    ```{r}
+    # Two-way contingency table for age group and inversions
+    age_inversion_table <- table(
+      coasters$AgeGroup,
+      coasters$`Inversions?`
+    )
+
+    age_inversion_table
+    ```
+
+    From the two-way table, 70 roller coasters in the 2:Recent age group have inversions.
+
+    ```{r}
+    # Three-way contingency table
+    three_way_table <- table(
+      coasters$AgeGroup,
+      coasters$`Inversions?`,
+      coasters$`Census Region`
+    )
+
+    three_way_table
+    ```
+
+    From the three-way table, 30 roller coasters in the 2:Recent age group in the South have inversions.
+
 7.  Create a conditional two-way table using table(). That is, condition on one variable’s setting and create a two-way table. Do this using two different methods: • Once, by subsetting the data (say with filter()) and then creating the two-way table • Once, by creating a three-way table and subsetting it
 
     **Solution:**
+
+    ```{r}
+    # Method 1: Filter the data to the South region
+    south_coasters <- coasters |>
+      filter(`Census Region` == "South")
+
+    # Create the two-way table
+    south_table1 <- table(
+      south_coasters$AgeGroup,
+      south_coasters$`Inversions?`
+    )
+
+    south_table1
+    ```
+
+    ```{r}
+    # Method 2: Select the South region from the three-way table
+    south_table2 <- three_way_table[, , "South"]
+
+    south_table2
+    ```
+
+    Both methods produce the same conditional two-way table for roller coasters in the South.
 
 8.  Create a two-way contingency table using group_by() and summarize() from dplyr. Then use pivot_wider() to make the result look more like the output from table().
 
     **Solution:**
 
+    ```{r}
+    # Count coasters for each combination of AgeGroup and Inversions
+    age_inversion_counts <- coasters |>
+      group_by(AgeGroup, `Inversions?`) |>
+      summarize(Count = n(), .groups = "drop")
+
+    age_inversion_counts
+    ```
+
+    ```{r}
+    # Reshape the counts to look like a contingency table
+    age_inversion_wide <- age_inversion_counts |>
+      pivot_wider(
+        names_from = `Inversions?`,
+        values_from = Count
+      )
+
+    age_inversion_wide
+    ```
+
 9.  Create a stacked bar graph and a side-by-side bar graph. Give relevant x and y labels, and a title for the plots.
 
     **Solution:**
+
+    ```{r}
+    # Stacked bar graph
+    ggplot(coasters, aes(x = AgeGroup, fill = `Inversions?`)) +
+      geom_bar() +
+      labs(
+        title = "Roller Coasters by Age Group and Inversion Status",
+        x = "Age Group",
+        y = "Number of Roller Coasters",
+        fill = "Has Inversions?"
+      )
+    ```
+
+    ```{r}
+    # Side-by-side bar graph
+    ggplot(coasters, aes(x = AgeGroup, fill = `Inversions?`)) +
+      geom_bar(position = "dodge") +
+      labs(
+        title = "Roller Coasters by Age Group and Inversion Status",
+        x = "Age Group",
+        y = "Number of Roller Coasters",
+        fill = "Has Inversions?"
+      )
+    ```
