@@ -1,0 +1,197 @@
+---
+title: "awu3_HW5"
+format: html
+editor: visual
+---
+
+## Task 1: Querying an API and a Tidy-Style Function
+
+**1.)**Use GET() from the httr package to return information about a topic that you are interested in that has been in the news lately (store the result as an R object). Note: We can only look 30 days into the
+past with a free account.
+
+```{r}
+library(httr)
+library(dotenv)
+
+# load in env file for API key
+load_dot_env()
+
+api_key <- Sys.getenv("API_KEY")
+
+#url for get
+url <- paste0("https://newsapi.org/v2/everything?q=Iran&from=2026-08-22&language=en&pageSize=50&apiKey=", api_key)
+
+# get data and check structure
+info <- httr::GET(url)
+str(info, max.level = 1)
+
+```
+
+**2.)**Parse what is returned and find your way to the data frame that has the actual article information in it (check content). Note the first column should be a list column!
+
+```{r}
+library(jsonlite)
+library(dplyr)
+
+# parse json and convert to char
+parsed <- fromJSON(rawToChar(info$content))
+parsed
+
+#convert to tibble
+news <- as_tibble(parsed$articles)
+news
+
+```
+
+**3.)**Now write a quick function that allows the user to easily query this API. The inputs to the function
+should be the title/subject to search for (string), a time period to search from (string - you’ll search
+from that time until the present), and an API key.
+
+Use your function twice to show it works!
+
+```{r}
+library(dplyr)
+#function to query API
+get_news <- function(subject, from_time, key) {
+  info <- GET(
+    "https://newsapi.org/v2/everything",
+    query = list(
+      q = subject,
+      from = from_time,
+      apiKey = key
+    )
+  )
+  parsed <- fromJSON(rawToChar(info$content))
+  parsed
+  
+  as_tibble(parsed$articles)
+}
+```
+
+```{r}
+
+#get us news
+get_news("United States", "2026-08-30", api_key)
+
+#get Apple news
+get_news("Apple", "2026-08-25", api_key)
+```
+
+## Task 2 - Summarizing Roller Coaster Data
+
+#### Basic EDA
+
+**4.)** Look at how the data is stored and see if everything makes sense
+
+```{r}
+library(readr)
+
+#read in coaster data
+coaster_data <- read_csv("https://www4.stat.ncsu.edu/online/datasets/635USrollercoasters.csv")
+
+# convert some cols to factor columns
+coaster_data <- coaster_data |> mutate(
+  State = as.factor(State),
+  `Census Region` = as.factor(`Census Region`),
+  AgeGroup = as.factor(AgeGroup),
+  Scale = as.factor(Scale),
+  Type = as.factor(Type),
+  Design = as.factor(Design),
+  Make = as.factor(Make)
+)
+coaster_data
+```
+
+**5.**) Document any missing values in the data
+
+```{r}
+#helper function to count missing values
+sum_na <- function(column){
+  sum(is.na(column))
+}
+
+#count missing values for each column
+coaster_data |> summarise(across(everything(), sum_na))
+
+```
+
+#### Categorical Variables
+
+**6.)** Create a one-way contingency table, a two-way contigency table, and a three-way contingency table for some of the factor variables you created previously. Use table() and accomplish this
+
+-   Interpret a number from each resulting table( that is pick out a value produced and explain what that value means.)
+
+-   **1 Way Contingency Table**-\> There are 69 roller coasters in the older age group the dataset
+
+    **2 Way Contingency Table** -\> There are 36 roller coasters in the older age group that are made of steel
+
+    **3 Way Contingency Table** -\> There are 79 new roller coasters made of steel meant for a thrill ride
+
+    ```{r}
+
+    #one way contigency table
+    table(coaster_data$AgeGroup)
+
+    #two way contigency table
+    table(coaster_data$AgeGroup, coaster_data$Type)
+
+    #three way contigency table
+    table(coaster_data$AgeGroup, 
+          coaster_data$Type, 
+          coaster_data$Scale)
+    ```
+
+**7.)**Create a conditional two-way table using table(). That is, condition on one variable’s setting and create a two-way table. Do this using two different methods:
+
+-   Once, by subsetting the data and then creating the two-way table
+
+-   Once, by creating a three-way table and subsetting it
+
+```{r}
+# subset data then create two-way table
+new_coaster <- coaster_data |> filter(AgeGroup == "3:Newest")
+
+# new coasters split up by region and scale
+table(new_coaster$`Census Region`, new_coaster$Scale)
+
+#three-way table and subset
+three_way <- table(new_coaster$`Census Region`, 
+                   new_coaster$Scale, 
+                   new_coaster$AgeGroup)
+three_way[,,"3:Newest"]
+```
+
+**8.)**Create a two-way contingency table using group_by() and summarize() from dplyr. Then use pivot_wider() to make the result look more like the output from table().
+
+```{r}
+library(tidyr)
+#2 way table by grouping and summaerize
+coaster_data |> 
+  group_by(Scale, `Census Region`) |>
+  summarize(count = n()) |>
+  pivot_wider(names_from = Scale, values_from = count)
+```
+
+**9.)** Create a stacked bar graph and a side-by-side bar graph. Give relevant x and y labels, and a title for
+the plots.
+
+```{r}
+library(ggplot2)
+
+# Create a stacked bar graph
+g <- ggplot(data = coaster_data, 
+            aes(x = `Census Region`, fill = Scale)) + 
+  geom_bar() +
+  labs(x = "Census Region", 
+       y = "Count", 
+       title = "Type of Coaster Count in Each Region") 
+g
+
+# Create a side by side bar graph
+g2 <-ggplot(data = coaster_data, aes(x = `Census Region`, fill = Scale)) + 
+  geom_bar(position = "dodge") +
+  labs(x = "Census Region", 
+       y = "Count", 
+       title = "Type of Coaster Count in Each Region") 
+g2
+```
