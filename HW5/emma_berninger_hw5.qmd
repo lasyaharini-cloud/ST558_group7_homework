@@ -1,0 +1,189 @@
+---
+title: "emma_berninger_hw5"
+format: html
+editor: visual
+---
+
+# TASK ONE: QUERYING AN API AND A TIDY-STYLE FUNCTION
+
+*Question 1*
+
+```{r}
+library(httr)
+library(tidyverse)
+
+key <- '97196a6e47d04457a6ffdf399f45a446'
+
+articles <- GET(
+  "https://newsapi.org/v2/everything",
+  query = list(
+    q = 'biology',
+    from = '2026-09-01',
+    language = 'en',
+    pagesize = 50,
+    apiKey = key
+  )
+)
+
+```
+
+*Question 2*
+
+```{r}
+articles_content <- content(
+  articles,
+  as = 'parsed',
+  simplifyVector = FALSE
+)
+
+names(articles_content)
+
+article_info <- articles_content$articles
+
+article_info[[1]]
+```
+
+```{r}
+article_tibble <- tibble(
+  source = map(article_info, 'source'),
+  author = map_chr(article_info, 'author', .default = NA_character_),
+  title = map_chr(article_info, 'title', .default = NA_character_),
+  description = map_chr(article_info, 'description', .default = NA_character_),
+  publishedAt = map_chr(article_info, 'publishedAt', .default = NA_character_)
+)
+
+str(article_tibble)
+```
+
+*Question 3*
+
+```{r}
+news_api_search <- function(subject, from_date, api_key){
+  API_article <- GET(
+    "https://newsapi.org/v2/everything",
+    query = list(
+      q = subject,
+      from = from_date,
+      apiKey = key
+    )
+  )
+  article_response <- content(
+    API_article,
+    as = 'parsed',
+    simplifyVector = FALSE
+  )
+  article_response$articles
+}
+
+physics_article <- news_api_search('physics', '2026-09-01', key)
+physics_article[[1]]
+
+epidemiology_article <- news_api_search('physics', '2026-09-01', key)
+epidemiology_article[[1]]
+```
+
+# TASK TWO: SUMMARIZING ROLLER COASTER DATA
+
+*Reading in data and changing variables*
+
+```{r}
+library(readr)
+rollercoaster_data <- read.csv('https://www4.stat.ncsu.edu/online/datasets/635USrollercoasters.csv')
+rollercoaster_data
+```
+
+```{r}
+library(dplyr)
+
+rollercoaster_data <- rollercoaster_data |>
+  mutate(
+    State = as.factor(State),
+    Census.Region = as.factor(Census.Region),
+    AgeGroup = as.factor(AgeGroup),
+    Scale = as.factor(Scale),
+    Type = as.factor(Type),
+    Design = as.factor(Design),
+    Make = as.factor(Make)
+  )
+rollercoaster_data
+```
+
+## BASIC EDA
+
+*Question 4*
+
+```{r}
+str(rollercoaster_data)
+```
+
+*Question 5*
+
+```{r}
+na_total <- function(column){
+  sum(is.na(column))
+}
+
+rollercoaster_na <- rollercoaster_data |>
+  summarize(across(everything(), na_total))
+rollercoaster_na
+```
+
+## CATEGORICAL VARIABLES
+
+*Question 6*
+
+```{r}
+one_way <- table(rollercoaster_data$Type)
+one_way
+#There are 530 rollercoasters made of steel
+```
+
+```{r}
+two_way <- table(rollercoaster_data$Type, rollercoaster_data$Design)
+two_way
+#There are 456 sit-down design rollercoasters that are made of steel
+```
+
+```{r}
+three_way <- table(rollercoaster_data$Type, rollercoaster_data$Design, rollercoaster_data$AgeGroup)
+three_way
+#There are 36 older sit-down design rollercoasters that are made of steel
+```
+
+*Question 7*
+
+```{r}
+new_type <- rollercoaster_data |>
+  filter(Type == 'Wood')
+two_way_subsetted <- table(new_type$Type, new_type$Design)
+two_way_subsetted
+```
+
+```{r}
+three_way_subsetted <- table(rollercoaster_data$Type, rollercoaster_data$Design, rollercoaster_data$AgeGroup)
+three_way_subsetted['Wood', , ]
+```
+
+*Question 8*
+
+```{r}
+two_way_group_summ <- rollercoaster_data |>
+  group_by(Type, Design) |>
+  summarize(count = n()) |>
+  pivot_wider(names_from = Design, values_from = count)
+two_way_group_summ
+```
+
+*Question 9*
+
+```{r}
+ggplot(rollercoaster_data, aes(x = Design, fill = Type)) +
+  geom_bar() +
+  labs(title = 'Rollercoaster Statistics: Design and Type', x = 'Design', y = '# of Rollercoasters', fill = 'Type')
+```
+
+```{r}
+ggplot(rollercoaster_data, aes(x = Design, fill = Type)) +
+  geom_bar(position = 'dodge') +
+  labs(title = 'Rollercoaster Statistics: Design and Type', x = 'Design', y = '# of Rollercoasters', fill = 'Type')
+```
