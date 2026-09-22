@@ -1,0 +1,228 @@
+---
+title: "hw5_bdevapa"
+format: html
+---
+
+# Task 1 - Querying an API and a Tidy-Style Function
+
+## Question 1
+
+Use GET() from the httr package to return information about a topic that you are interested in that has been in the news lately (store the result as an R object). Note: We can only look 30 days into the past with a free account
+
+```{r}
+#1
+library(httr)
+resp <- GET("https://newsapi.org/v2/everything?q=ai&from=2026-09-01&language=en&pageSize=50&apiKey=43416691f7e147da9122be62d78cff7c")
+
+```
+
+## Question 2
+
+Parse what is returned and find your way to the data frame that has the actual article information in it (check content). Note the first column should be a list column!
+
+```{r}
+#2
+
+library(jsonlite)
+library(tidyverse)
+resp_json <- fromJSON(rawToChar(resp$content))
+news_articles <- as_tibble(resp_json$articles)
+news_articles
+
+```
+
+## Question 3
+
+Now write a quick function that allows the user to easily query this API. The inputs to the function should be the title/subject to search for (string), a time period to search from (string - you’ll search from that time until the present), and an API key.
+
+```{r}
+#3
+
+find_news_articles <- function(topicStr, fromDateStr, apiKey) {
+  
+  #check for missing inputs 
+  if (missing(topicStr) || missing(fromDateStr) || missing(apiKey)) {
+    stop("topicStr, fromDateStr, and apiKey are required")
+  }
+  
+   # Convert the supplied date to a Date -- without supplying format the default format is not what not acceptable by the api
+  fromDate <- as.Date(fromDateStr, format = "%m-%d-%Y")
+
+  # Check that date is not more than 30 days old
+  #wihtout the error it simply gives 0 results -- the api doesnbt provide results for last 30 days
+  if (fromDate < Sys.Date() - 30) {
+    stop("fromDateStr cannot be more than 30 days old")
+  }
+  
+  library(httr)
+  library(jsonlite)
+  
+  url <- paste0(
+    "https://newsapi.org/v2/everything?q=", topicStr,
+    "&from=", fromDateStr,
+    "&language=en&pageSize=50&apiKey=", apiKey
+    )
+  resp <- GET(url)
+ 
+resp_json <- fromJSON(rawToChar(resp$content))
+news_articles <- as_tibble(resp_json$articles)
+
+}
+
+news <- find_news_articles("tesla","09-01-2026","43416691f7e147da9122be62d78cff7c")
+news
+
+```
+
+# Task 2 - Summarizing Roller Coaster Data
+
+- Basic EDA
+
+## Question 4 & 5
+- Look at how the data is stored and see if everything makes sense.
+- Document any missing values in the data.
+
+
+```{r}
+#4
+ library(readr)
+ roller_coaster_data <- read_csv("https://www4.stat.ncsu.edu/online/datasets/635USrollercoasters.csv")
+ 
+str(roller_coaster_data)
+
+
+
+# the data generally makes sense, some columns such as yearOpened can be character
+roller_coaster_data <- roller_coaster_data |>
+  mutate(YearOpened = as.character(`Year Opened`),
+         StateF = factor(State),
+         AgeGroupF = factor(AgeGroup),
+         ScaleF = factor(Scale),
+         TypeF = factor(Type),
+         DesignF = factor(Design)
+         )
+
+roller_coaster_data
+
+# 5 - document missing values 
+
+sum_na <- function(column){
+  sum(is.na(column))
+}
+
+na_counts <- roller_coaster_data |>
+  summarize(across(everything(), sum_na))
+na_counts
+
+
+```
+
+- Categorical variables
+
+## Question - 6
+
+Create a one-way contingency table, a two-way contingency table, and a three-way contingency table
+for some of the factor variables you created previously. Use `table()` to accomplish this
+
+```{r}
+#6
+# group by type factor variable and counting for each group
+one_way <- table(roller_coaster_data$TypeF) 
+
+one_way
+
+# two way table -- group by roller coaster and by age group factor variables
+two_way <- table(roller_coaster_data$AgeGroupF, roller_coaster_data$TypeF)
+
+two_way
+
+# three way table -- group by roller caoster and by agen group factor variables -- but then also group by the design 
+three_way <- table(roller_coaster_data$AgeGroupF, roller_coaster_data$TypeF, roller_coaster_data$DesignF)
+
+three_way
+
+
+```
+
+## Question - 7
+
+- Create a conditional two-way table using table(). That is, condition on one variable’s setting and
+create a two-way table. Do this using two different methods:
+• Once, by subsetting the data (say with filter()) and then creating the two-way table
+• Once, by creating a three-way table and subsetting it
+
+```{r}
+#7
+# by subsetting the data (say with filter()) and then creating the two-way table
+bobsled_data <- roller_coaster_data |>
+  filter(DesignF == "Bobsled")
+
+conditional_two_way_7_1 <- table(bobsled_data$AgeGroupF, bobsled_data$TypeF)
+
+conditional_two_way_7_1
+
+# by creating a three-way table and subsetting it
+three_way <- table(roller_coaster_data$AgeGroupF, roller_coaster_data$TypeF, roller_coaster_data$DesignF)
+
+
+conditional_two_way_7_2 <- three_way[, , "Bobsled"]
+
+conditional_two_way_7_2 
+
+
+
+```
+## Question - 8
+
+Create a two-way contingency table using group_by() and summarize() from dplyr. Then use
+pivot_wider() to make the result look more like the output from table().
+
+```{r}
+
+#8
+
+two_way <- table(roller_coaster_data$AgeGroupF, roller_coaster_data$TypeF)
+
+two_way
+
+two_way_tidy <- roller_coaster_data |>
+  group_by(AgeGroupF, TypeF) |>
+  summarize(count = n()) |>
+  pivot_wider(names_from = TypeF, values_from = count)
+
+
+two_way_tidy
+
+
+```
+
+
+## Question - 9
+
+Create a stacked bar graph and a side-by-side bar graph. Give relevant x and y labels, and a title for
+the plots.
+
+```{r}
+
+#9
+
+
+
+
+g <- ggplot(roller_coaster_data, aes(x = AgeGroupF, fill = TypeF))
+g + geom_bar() + 
+  labs(title = "Roller Coaster Type by Age Group") +
+  scale_fill_discrete("Type of material")
+
+#Below is antoer way to do it 
+
+g1 <- ggplot(data = roller_coaster_data |> 
+         group_by(AgeGroupF, TypeF) |>
+         summarize(count = n()), aes(x = AgeGroupF, y = count, fill = TypeF)) 
+g1 + geom_bar(stat = "identity") +
+  labs( title = "Roller Coaster Type by Age Group (using Stat Layer)",
+        x = "Age Group") +
+  scale_fill_discrete("Type of material")
+
+
+```
