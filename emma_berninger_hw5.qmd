@@ -64,9 +64,7 @@ news_api_search <- function(subject, from_date, api_key){
     query = list(
       q = subject,
       from = from_date,
-      language = 'en',
-      pageSize = 50,
-      apiKey = api_key
+      apiKey = key
     )
   )
   article_response <- content(
@@ -77,57 +75,115 @@ news_api_search <- function(subject, from_date, api_key){
   article_response$articles
 }
 
-physics_article <- API_article(
-  q = 'physics',
-  from = '2026-09-01',
-  apiKey = key
-)
-
+physics_article <- news_api_search('physics', '2026-09-01', key)
 physics_article[[1]]
 
-epidemiology_article <- API_article(
-  q = 'epidemiology',
-  from = '2026-09-01',
-  apiKey = key
-)
-
+epidemiology_article <- news_api_search('physics', '2026-09-01', key)
 epidemiology_article[[1]]
 ```
 
 # TASK TWO
 
+*Reading in data and changing variables*
+
+```{r}
+library(readr)
+rollercoaster_data <- read.csv('https://www4.stat.ncsu.edu/online/datasets/635USrollercoasters.csv')
+rollercoaster_data
+```
+
+```{r}
+library(dplyr)
+
+rollercoaster_data <- rollercoaster_data |>
+  mutate(
+    State = as.factor(State),
+    Census.Region = as.factor(Census.Region),
+    AgeGroup = as.factor(AgeGroup),
+    Scale = as.factor(Scale),
+    Type = as.factor(Type),
+    Design = as.factor(Design),
+    Make = as.factor(Make)
+  )
+rollercoaster_data
+```
+
+## BASIC EDA
+
 *Question 4*
 
 ```{r}
-
+str(rollercoaster_data)
 ```
 
 *Question 5*
 
 ```{r}
+na_total <- function(column){
+  sum(is.na(column))
+}
 
+rollercoaster_na <- rollercoaster_data |>
+  summarize(across(everything(), na_total))
+rollercoaster_na
 ```
+
+## CATEGORICAL VARIABLES
 
 *Question 6*
 
 ```{r}
+one_way <- table(rollercoaster_data$Type)
+one_way
+#There are 530 rollercoasters made of steel
+```
 
+```{r}
+two_way <- table(rollercoaster_data$Type, rollercoaster_data$Design)
+two_way
+#There are 456 sit-down design rollercoasters that are made of steel
+```
+
+```{r}
+three_way <- table(rollercoaster_data$Type, rollercoaster_data$Design, rollercoaster_data$AgeGroup)
+three_way
+#There are 36 older sit-down design rollercoasters that are made of steel
 ```
 
 *Question 7*
 
 ```{r}
+new_type <- rollercoaster_data |>
+  filter(Type == 'Wood')
+two_way_subsetted <- table(new_type$Type, new_type$Design)
+two_way_subsetted
+```
 
+```{r}
+three_way_subsetted <- table(rollercoaster_data$Type, rollercoaster_data$Design, rollercoaster_data$AgeGroup)
+three_way_subsetted['Wood', , ]
 ```
 
 *Question 8*
 
 ```{r}
-
+two_way_group_summ <- rollercoaster_data |>
+  group_by(Type, Design) |>
+  summarize(count = n()) |>
+  pivot_wider(names_from = Design, values_from = count)
+two_way_group_summ
 ```
 
 *Question 9*
 
 ```{r}
+ggplot(rollercoaster_data, aes(x = Design, fill = Type)) +
+  geom_bar() +
+  labs(title = 'Rollercoaster Statistics: Design and Type', x = 'Design', y = '# of Rollercoasters', fill = 'Type')
+```
 
+```{r}
+ggplot(rollercoaster_data, aes(x = Design, fill = Type)) +
+  geom_bar(position = 'dodge') +
+  labs(title = 'Rollercoaster Statistics: Design and Type', x = 'Design', y = '# of Rollercoasters', fill = 'Type')
 ```
