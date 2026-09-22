@@ -4,7 +4,7 @@ format: html
 editor: visual
 ---
 
-# TASK ONE
+# TASK ONE: QUERYING AN API AND A TIDY-STYLE FUNCTION
 
 *Question 1*
 
@@ -82,7 +82,7 @@ epidemiology_article <- news_api_search('physics', '2026-09-01', key)
 epidemiology_article[[1]]
 ```
 
-# TASK TWO
+# TASK TWO: SUMMARIZING ROLLER COASTER DATA
 
 *Reading in data and changing variables*
 
