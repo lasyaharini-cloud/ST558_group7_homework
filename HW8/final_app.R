@@ -33,7 +33,7 @@ ui <- fluidPage(
         inputId = "hhl_corr",
         label = "Household Language",
         choices = c("All" = "all",
-                    "English Only" = "enlgish",
+                    "English Only" = "english",
                     "Spanish" = "spanish",
                     "Other" = "other")),
       
@@ -48,8 +48,8 @@ ui <- fluidPage(
         inputId = "schl_corr",
         label = "Educational attainment",
         choices = c("All" = "all",
-                    "High School not Completed" = "hs_not_comp",
-                    "High School or GED" = "hs_or_ged",
+                    "High School not Completed" = "no_hs",
+                    "High School or GED" = "hs",
                     "Collge Degree" = "college")),
       h2("Select a Sample Size"),
       
