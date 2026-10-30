@@ -1,0 +1,38 @@
+
+---
+title: "HW 9: Basic Modeling Practice"
+author: "Lasya Harini Banka"
+format: html
+editor: source
+---
+
+## Introduction
+
+In this homework, I will explore the Seoul Bike Sharing
+dataset and use multiple linear regression to predict
+daily bike rentals. I will first clean and summarize the
+data, then compare three regression models using their
+test-set RMSE.
+
+## Load Packages
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(rsample)
+```
+
+## Read the Data
+
+The dataset contains hourly bike rental information
+along with weather and calendar variables.
+
+```{r}
+bike_data <- read_csv(
+  "https://www4.stat.ncsu.edu/~online/datasets/SeoulBikeData.csv",
+  locale = locale(encoding = "Latin1")
+)
+
+head(bike_data)
+dim(bike_data)
+```
