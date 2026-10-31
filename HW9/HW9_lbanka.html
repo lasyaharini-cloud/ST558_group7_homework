@@ -113,10 +113,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>In this homework, I will explore the Seoul Bike Sharing dataset and use multiple linear regression to predict daily bike rentals. I will first clean and summarize the data, then compare three regression models using their test-set RMSE.</p>
+<p>In this homework, I will explore the Seoul Bike Sharing dataset. I will clean the data, look at summary statistics, and prepare it for regression modeling.</p>
 </section>
-<section id="load-packages" class="level2">
-<h2 class="anchored" data-anchor-id="load-packages">Load Packages</h2>
+<section id="part-1-reading-the-data" class="level2">
+<h2 class="anchored" data-anchor-id="part-1-reading-the-data">Part 1: Reading the Data</h2>
+<section id="loading-packages" class="level3">
+<h3 class="anchored" data-anchor-id="loading-packages">Loading Packages</h3>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
@@ -135,9 +137,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rsample)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
-<section id="read-the-data" class="level2">
-<h2 class="anchored" data-anchor-id="read-the-data">Read the Data</h2>
-<p>The dataset contains hourly bike rental information along with weather and calendar variables.</p>
+<section id="reading-the-dataset" class="level3">
+<h3 class="anchored" data-anchor-id="reading-the-dataset">Reading the Dataset</h3>
+<p>The dataset contains hourly bike rentals and weather information from Seoul.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>bike_data <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"https://www4.stat.ncsu.edu/~online/datasets/SeoulBikeData.csv"</span>,</span>
@@ -174,6 +176,469 @@ dbl (10): Rented Bike Count, Hour, Temperature(°C), Humidity(%), Wind speed ...
 <pre><code>[1] 8760   14</code></pre>
 </div>
 </div>
+<p>The dataset has 8,760 rows and 14 columns.</p>
+</section>
+</section>
+<section id="part-2-exploratory-data-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="part-2-exploratory-data-analysis">Part 2: Exploratory Data Analysis</h2>
+<section id="checking-missing-values" class="level3">
+<h3 class="anchored" data-anchor-id="checking-missing-values">Checking Missing Values</h3>
+<p>First, I checked whether the dataset contains any missing values.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colSums</span>(<span class="fu">is.na</span>(bike_data))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                     Date         Rented Bike Count                      Hour 
+                        0                         0                         0 
+          Temperature(°C)               Humidity(%)          Wind speed (m/s) 
+                        0                         0                         0 
+         Visibility (10m) Dew point temperature(°C)   Solar Radiation (MJ/m2) 
+                        0                         0                         0 
+             Rainfall(mm)             Snowfall (cm)                   Seasons 
+                        0                         0                         0 
+                  Holiday           Functioning Day 
+                        0                         0 </code></pre>
+</div>
+</div>
+<p>There are no missing values in the dataset.</p>
+</section>
+<section id="checking-column-types" class="level3">
+<h3 class="anchored" data-anchor-id="checking-column-types">Checking Column Types</h3>
+<p>I checked the data types and summary statistics to understand the variables.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(bike_data)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>spc_tbl_ [8,760 × 14] (S3: spec_tbl_df/tbl_df/tbl/data.frame)
+ $ Date                     : chr [1:8760] "01/12/2017" "01/12/2017" "01/12/2017" "01/12/2017" ...
+ $ Rented Bike Count        : num [1:8760] 254 204 173 107 78 100 181 460 930 490 ...
+ $ Hour                     : num [1:8760] 0 1 2 3 4 5 6 7 8 9 ...
+ $ Temperature(°C)          : num [1:8760] -5.2 -5.5 -6 -6.2 -6 -6.4 -6.6 -7.4 -7.6 -6.5 ...
+ $ Humidity(%)              : num [1:8760] 37 38 39 40 36 37 35 38 37 27 ...
+ $ Wind speed (m/s)         : num [1:8760] 2.2 0.8 1 0.9 2.3 1.5 1.3 0.9 1.1 0.5 ...
+ $ Visibility (10m)         : num [1:8760] 2000 2000 2000 2000 2000 ...
+ $ Dew point temperature(°C): num [1:8760] -17.6 -17.6 -17.7 -17.6 -18.6 -18.7 -19.5 -19.3 -19.8 -22.4 ...
+ $ Solar Radiation (MJ/m2)  : num [1:8760] 0 0 0 0 0 0 0 0 0.01 0.23 ...
+ $ Rainfall(mm)             : num [1:8760] 0 0 0 0 0 0 0 0 0 0 ...
+ $ Snowfall (cm)            : num [1:8760] 0 0 0 0 0 0 0 0 0 0 ...
+ $ Seasons                  : chr [1:8760] "Winter" "Winter" "Winter" "Winter" ...
+ $ Holiday                  : chr [1:8760] "No Holiday" "No Holiday" "No Holiday" "No Holiday" ...
+ $ Functioning Day          : chr [1:8760] "Yes" "Yes" "Yes" "Yes" ...
+ - attr(*, "spec")=
+  .. cols(
+  ..   Date = col_character(),
+  ..   `Rented Bike Count` = col_double(),
+  ..   Hour = col_double(),
+  ..   `Temperature(°C)` = col_double(),
+  ..   `Humidity(%)` = col_double(),
+  ..   `Wind speed (m/s)` = col_double(),
+  ..   `Visibility (10m)` = col_double(),
+  ..   `Dew point temperature(°C)` = col_double(),
+  ..   `Solar Radiation (MJ/m2)` = col_double(),
+  ..   `Rainfall(mm)` = col_double(),
+  ..   `Snowfall (cm)` = col_double(),
+  ..   Seasons = col_character(),
+  ..   Holiday = col_character(),
+  ..   `Functioning Day` = col_character()
+  .. )
+ - attr(*, "problems")=&lt;externalptr&gt; </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>bike_data <span class="sc">|&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="fu">where</span>(is.numeric)) <span class="sc">|&gt;</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summary</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> Rented Bike Count      Hour       Temperature(°C)   Humidity(%)   
+ Min.   :   0.0    Min.   : 0.00   Min.   :-17.80   Min.   : 0.00  
+ 1st Qu.: 191.0    1st Qu.: 5.75   1st Qu.:  3.50   1st Qu.:42.00  
+ Median : 504.5    Median :11.50   Median : 13.70   Median :57.00  
+ Mean   : 704.6    Mean   :11.50   Mean   : 12.88   Mean   :58.23  
+ 3rd Qu.:1065.2    3rd Qu.:17.25   3rd Qu.: 22.50   3rd Qu.:74.00  
+ Max.   :3556.0    Max.   :23.00   Max.   : 39.40   Max.   :98.00  
+ Wind speed (m/s) Visibility (10m) Dew point temperature(°C)
+ Min.   :0.000    Min.   :  27     Min.   :-30.600          
+ 1st Qu.:0.900    1st Qu.: 940     1st Qu.: -4.700          
+ Median :1.500    Median :1698     Median :  5.100          
+ Mean   :1.725    Mean   :1437     Mean   :  4.074          
+ 3rd Qu.:2.300    3rd Qu.:2000     3rd Qu.: 14.800          
+ Max.   :7.400    Max.   :2000     Max.   : 27.200          
+ Solar Radiation (MJ/m2)  Rainfall(mm)     Snowfall (cm)    
+ Min.   :0.0000          Min.   : 0.0000   Min.   :0.00000  
+ 1st Qu.:0.0000          1st Qu.: 0.0000   1st Qu.:0.00000  
+ Median :0.0100          Median : 0.0000   Median :0.00000  
+ Mean   :0.5691          Mean   : 0.1487   Mean   :0.07507  
+ 3rd Qu.:0.9300          3rd Qu.: 0.0000   3rd Qu.:0.00000  
+ Max.   :3.5200          Max.   :35.0000   Max.   :8.80000  </code></pre>
+</div>
+</div>
+</section>
+<section id="checking-categorical-variables" class="level3">
+<h3 class="anchored" data-anchor-id="checking-categorical-variables">Checking Categorical Variables</h3>
+<p>I checked the values in the categorical columns.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(bike_data<span class="sc">$</span>Seasons)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Winter" "Spring" "Summer" "Autumn"</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(bike_data<span class="sc">$</span>Holiday)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "No Holiday" "Holiday"   </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(bike_data<span class="sc">$</span><span class="st">`</span><span class="at">Functioning Day</span><span class="st">`</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Yes" "No" </code></pre>
+</div>
+</div>
+</section>
+<section id="converting-date" class="level3">
+<h3 class="anchored" data-anchor-id="converting-date">Converting Date</h3>
+<p>The Date column was stored as text, so I converted it into a date format.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>bike_data <span class="ot">&lt;-</span> bike_data <span class="sc">|&gt;</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Date =</span> <span class="fu">dmy</span>(Date))</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(bike_data<span class="sc">$</span>Date)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "2017-12-01" "2017-12-01" "2017-12-01" "2017-12-01" "2017-12-01"
+[6] "2017-12-01"</code></pre>
+</div>
+</div>
+</section>
+<section id="converting-categorical-variables" class="level3">
+<h3 class="anchored" data-anchor-id="converting-categorical-variables">Converting Categorical Variables</h3>
+<p>I converted the categorical variables into factors.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>bike_data <span class="ot">&lt;-</span> bike_data <span class="sc">|&gt;</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">Seasons =</span> <span class="fu">as.factor</span>(Seasons),</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">Holiday =</span> <span class="fu">as.factor</span>(Holiday),</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Functioning Day</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">as.factor</span>(<span class="st">`</span><span class="at">Functioning Day</span><span class="st">`</span>)</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(bike_data)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>tibble [8,760 × 14] (S3: tbl_df/tbl/data.frame)
+ $ Date                     : Date[1:8760], format: "2017-12-01" "2017-12-01" ...
+ $ Rented Bike Count        : num [1:8760] 254 204 173 107 78 100 181 460 930 490 ...
+ $ Hour                     : num [1:8760] 0 1 2 3 4 5 6 7 8 9 ...
+ $ Temperature(°C)          : num [1:8760] -5.2 -5.5 -6 -6.2 -6 -6.4 -6.6 -7.4 -7.6 -6.5 ...
+ $ Humidity(%)              : num [1:8760] 37 38 39 40 36 37 35 38 37 27 ...
+ $ Wind speed (m/s)         : num [1:8760] 2.2 0.8 1 0.9 2.3 1.5 1.3 0.9 1.1 0.5 ...
+ $ Visibility (10m)         : num [1:8760] 2000 2000 2000 2000 2000 ...
+ $ Dew point temperature(°C): num [1:8760] -17.6 -17.6 -17.7 -17.6 -18.6 -18.7 -19.5 -19.3 -19.8 -22.4 ...
+ $ Solar Radiation (MJ/m2)  : num [1:8760] 0 0 0 0 0 0 0 0 0.01 0.23 ...
+ $ Rainfall(mm)             : num [1:8760] 0 0 0 0 0 0 0 0 0 0 ...
+ $ Snowfall (cm)            : num [1:8760] 0 0 0 0 0 0 0 0 0 0 ...
+ $ Seasons                  : Factor w/ 4 levels "Autumn","Spring",..: 4 4 4 4 4 4 4 4 4 4 ...
+ $ Holiday                  : Factor w/ 2 levels "Holiday","No Holiday": 2 2 2 2 2 2 2 2 2 2 ...
+ $ Functioning Day          : Factor w/ 2 levels "No","Yes": 2 2 2 2 2 2 2 2 2 2 ...</code></pre>
+</div>
+</div>
+</section>
+<section id="renaming-columns" class="level3">
+<h3 class="anchored" data-anchor-id="renaming-columns">Renaming Columns</h3>
+<p>I renamed the variables using lower snake case to make them easier to use.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>bike_data <span class="ot">&lt;-</span> bike_data <span class="sc">|&gt;</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename_with</span>(<span class="sc">~</span> <span class="st">"date"</span>, <span class="at">.cols =</span> Date) <span class="sc">|&gt;</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename_with</span>(<span class="sc">~</span> <span class="st">"bike_count"</span>, <span class="at">.cols =</span> <span class="st">`</span><span class="at">Rented Bike Count</span><span class="st">`</span>) <span class="sc">|&gt;</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename_with</span>(<span class="sc">~</span> <span class="st">"hour"</span>, <span class="at">.cols =</span> Hour) <span class="sc">|&gt;</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename_with</span>(<span class="sc">~</span> <span class="st">"temp"</span>, <span class="at">.cols =</span> <span class="fu">starts_with</span>(<span class="st">"Temperature"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename_with</span>(<span class="sc">~</span> <span class="st">"humidity"</span>, <span class="at">.cols =</span> <span class="fu">starts_with</span>(<span class="st">"Humidity"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename_with</span>(<span class="sc">~</span> <span class="st">"wind_speed"</span>, <span class="at">.cols =</span> <span class="fu">starts_with</span>(<span class="st">"Wind speed"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename_with</span>(<span class="sc">~</span> <span class="st">"visibility"</span>, <span class="at">.cols =</span> <span class="fu">starts_with</span>(<span class="st">"Visibility"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename_with</span>(<span class="sc">~</span> <span class="st">"dew_point_temp"</span>, <span class="at">.cols =</span> <span class="fu">starts_with</span>(<span class="st">"Dew point"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename_with</span>(<span class="sc">~</span> <span class="st">"solar_radiation"</span>, <span class="at">.cols =</span> <span class="fu">starts_with</span>(<span class="st">"Solar Radiation"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename_with</span>(<span class="sc">~</span> <span class="st">"rainfall"</span>, <span class="at">.cols =</span> <span class="fu">starts_with</span>(<span class="st">"Rainfall"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename_with</span>(<span class="sc">~</span> <span class="st">"snowfall"</span>, <span class="at">.cols =</span> <span class="fu">starts_with</span>(<span class="st">"Snowfall"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename_with</span>(<span class="sc">~</span> <span class="st">"seasons"</span>, <span class="at">.cols =</span> Seasons) <span class="sc">|&gt;</span></span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename_with</span>(<span class="sc">~</span> <span class="st">"holiday"</span>, <span class="at">.cols =</span> Holiday) <span class="sc">|&gt;</span></span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename_with</span>(<span class="sc">~</span> <span class="st">"functioning_day"</span>, <span class="at">.cols =</span> <span class="st">`</span><span class="at">Functioning Day</span><span class="st">`</span>)</span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(bike_data)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "date"            "bike_count"      "hour"            "temp"           
+ [5] "humidity"        "wind_speed"      "visibility"      "dew_point_temp" 
+ [9] "solar_radiation" "rainfall"        "snowfall"        "seasons"        
+[13] "holiday"         "functioning_day"</code></pre>
+</div>
+</div>
+</section>
+<section id="summary-statistics" class="level3">
+<h3 class="anchored" data-anchor-id="summary-statistics">Summary Statistics</h3>
+<p>I calculated the mean, median, minimum, and maximum number of bike rentals.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>bike_data <span class="sc">|&gt;</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_bikes =</span> <span class="fu">mean</span>(bike_count),</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">median_bikes =</span> <span class="fu">median</span>(bike_count),</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_bikes =</span> <span class="fu">min</span>(bike_count),</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_bikes =</span> <span class="fu">max</span>(bike_count)</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 4
+  mean_bikes median_bikes min_bikes max_bikes
+       &lt;dbl&gt;        &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+1       705.         504.         0      3556</code></pre>
+</div>
+</div>
+<p>I also compared bike rentals across seasons, holidays, and functioning days.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>bike_data <span class="sc">|&gt;</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(seasons) <span class="sc">|&gt;</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">count =</span> <span class="fu">n</span>(),</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_bikes =</span> <span class="fu">mean</span>(bike_count),</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 3
+  seasons count avg_bikes
+  &lt;fct&gt;   &lt;int&gt;     &lt;dbl&gt;
+1 Autumn   2184      820.
+2 Spring   2208      730.
+3 Summer   2208     1034.
+4 Winter   2160      226.</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>bike_data <span class="sc">|&gt;</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(holiday) <span class="sc">|&gt;</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">count =</span> <span class="fu">n</span>(),</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_bikes =</span> <span class="fu">mean</span>(bike_count),</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 3
+  holiday    count avg_bikes
+  &lt;fct&gt;      &lt;int&gt;     &lt;dbl&gt;
+1 Holiday      432      500.
+2 No Holiday  8328      715.</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>bike_data <span class="sc">|&gt;</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(functioning_day) <span class="sc">|&gt;</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">count =</span> <span class="fu">n</span>(),</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_bikes =</span> <span class="fu">mean</span>(bike_count),</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 3
+  functioning_day count avg_bikes
+  &lt;fct&gt;           &lt;int&gt;     &lt;dbl&gt;
+1 No                295        0 
+2 Yes              8465      729.</code></pre>
+</div>
+</div>
+<p>Bike rentals vary across seasons and holidays. Non-functioning hours have zero rentals.</p>
+</section>
+<section id="removing-non-functioning-hours" class="level3">
+<h3 class="anchored" data-anchor-id="removing-non-functioning-hours">Removing Non-Functioning Hours</h3>
+<p>Since the bike rental system was not operating during non-functioning hours, I removed those observations.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>bike_data <span class="ot">&lt;-</span> bike_data <span class="sc">|&gt;</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(functioning_day <span class="sc">==</span> <span class="st">"Yes"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>functioning_day)</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(bike_data)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 8465   13</code></pre>
+</div>
+</div>
+</section>
+<section id="creating-daily-data" class="level3">
+<h3 class="anchored" data-anchor-id="creating-daily-data">Creating Daily Data</h3>
+<p>I combined the hourly observations into daily observations. I used the sum for bike rentals, rainfall, and snowfall, and the mean for other weather variables.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>bike_daily <span class="ot">&lt;-</span> bike_data <span class="sc">|&gt;</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(date, seasons, holiday) <span class="sc">|&gt;</span></span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">bike_count =</span> <span class="fu">sum</span>(bike_count),</span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">rainfall =</span> <span class="fu">sum</span>(rainfall),</span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">snowfall =</span> <span class="fu">sum</span>(snowfall),</span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">temp =</span> <span class="fu">mean</span>(temp),</span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">humidity =</span> <span class="fu">mean</span>(humidity),</span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">wind_speed =</span> <span class="fu">mean</span>(wind_speed),</span>
+<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">visibility =</span> <span class="fu">mean</span>(visibility),</span>
+<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">dew_point_temp =</span> <span class="fu">mean</span>(dew_point_temp),</span>
+<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">solar_radiation =</span> <span class="fu">mean</span>(solar_radiation),</span>
+<span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb38-14"><a href="#cb38-14" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb38-15"><a href="#cb38-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-16"><a href="#cb38-16" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(bike_daily)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 12
+  date       seasons holiday    bike_count rainfall snowfall    temp humidity
+  &lt;date&gt;     &lt;fct&gt;   &lt;fct&gt;           &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
+1 2017-12-01 Winter  No Holiday       9539      0        0   -2.45       45.9
+2 2017-12-02 Winter  No Holiday       8523      0        0    1.33       62.0
+3 2017-12-03 Winter  No Holiday       7222      4        0    4.88       81.5
+4 2017-12-04 Winter  No Holiday       8729      0.1      0   -0.304      52.5
+5 2017-12-05 Winter  No Holiday       8307      0        0   -4.46       36.4
+6 2017-12-06 Winter  No Holiday       6669      1.3      8.6  0.0458     70.8
+# ℹ 4 more variables: wind_speed &lt;dbl&gt;, visibility &lt;dbl&gt;, dew_point_temp &lt;dbl&gt;,
+#   solar_radiation &lt;dbl&gt;</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(bike_daily)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 353  12</code></pre>
+</div>
+</div>
+<p>The daily dataset now has 353 rows and 12 columns.</p>
+</section>
+</section>
+<section id="part-3-exploring-daily-bike-rentals" class="level2">
+<h2 class="anchored" data-anchor-id="part-3-exploring-daily-bike-rentals">Part 3: Exploring Daily Bike Rentals</h2>
+<p>Now that the hourly data has been combined into daily observations, I looked at how bike rentals vary over time and across different weather conditions.</p>
+<section id="distribution-of-daily-bike-rentals" class="level3">
+<h3 class="anchored" data-anchor-id="distribution-of-daily-bike-rentals">Distribution of Daily Bike Rentals</h3>
+<p>I first used a histogram to look at the distribution of daily bike rentals.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bike_daily, <span class="fu">aes</span>(<span class="at">x =</span> bike_count)) <span class="sc">+</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">bins =</span> <span class="dv">30</span>, <span class="at">fill =</span> <span class="st">"steelblue"</span>, <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Distribution of Daily Bike Rentals"</span>,</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Daily Bike Rentals"</span>,</span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Number of Days"</span></span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="HW9_lbanka_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="bike-rentals-over-time" class="level3">
+<h3 class="anchored" data-anchor-id="bike-rentals-over-time">Bike Rentals Over Time</h3>
+<p>I plotted daily bike rentals over time to see how rental activity changes throughout the year.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bike_daily, <span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> bike_count)) <span class="sc">+</span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">color =</span> <span class="st">"steelblue"</span>) <span class="sc">+</span></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Daily Bike Rentals Over Time"</span>,</span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Date"</span>,</span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Number of Bikes Rented"</span></span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="HW9_lbanka_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="bike-rentals-by-season" class="level3">
+<h3 class="anchored" data-anchor-id="bike-rentals-by-season">Bike Rentals by Season</h3>
+<p>I used boxplots to compare daily bike rentals across seasons.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bike_daily, <span class="fu">aes</span>(<span class="at">x =</span> seasons, <span class="at">y =</span> bike_count)) <span class="sc">+</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">fill =</span> <span class="st">"lightblue"</span>) <span class="sc">+</span></span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Daily Bike Rentals by Season"</span>,</span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Season"</span>,</span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Daily Bike Rentals"</span></span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="HW9_lbanka_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="bike-rentals-by-holiday" class="level3">
+<h3 class="anchored" data-anchor-id="bike-rentals-by-holiday">Bike Rentals by Holiday</h3>
+<p>I also compared the number of bikes rented on holidays and non-holidays.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bike_daily, <span class="fu">aes</span>(<span class="at">x =</span> holiday, <span class="at">y =</span> bike_count)) <span class="sc">+</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">fill =</span> <span class="st">"lightgreen"</span>) <span class="sc">+</span></span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Daily Bike Rentals by Holiday"</span>,</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Holiday"</span>,</span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Daily Bike Rentals"</span></span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="HW9_lbanka_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="temperature-and-bike-rentals" class="level3">
+<h3 class="anchored" data-anchor-id="temperature-and-bike-rentals">Temperature and Bike Rentals</h3>
+<p>I created a scatterplot to examine the relationship between average temperature and daily bike rentals.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bike_daily, <span class="fu">aes</span>(<span class="at">x =</span> temp, <span class="at">y =</span> bike_count)) <span class="sc">+</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">color =</span> <span class="st">"steelblue"</span>) <span class="sc">+</span></span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">color =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Temperature vs Daily Bike Rentals"</span>,</span>
+<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Average Temperature (C)"</span>,</span>
+<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Daily Bike Rentals"</span></span>
+<span id="cb46-8"><a href="#cb46-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb46-9"><a href="#cb46-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using formula = 'y ~ x'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="HW9_lbanka_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="correlations-between-numeric-variables" class="level3">
+<h3 class="anchored" data-anchor-id="correlations-between-numeric-variables">Correlations Between Numeric Variables</h3>
+<p>I calculated correlations to see which numeric variables have stronger linear relationships with bike rentals.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>bike_cor <span class="ot">&lt;-</span> bike_daily <span class="sc">|&gt;</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="fu">where</span>(is.numeric)) <span class="sc">|&gt;</span></span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cor</span>(<span class="at">use =</span> <span class="st">"complete.obs"</span>)</span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(bike_cor, <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                bike_count rainfall snowfall  temp humidity wind_speed
+bike_count            1.00    -0.24    -0.27  0.75     0.04      -0.19
+rainfall             -0.24     1.00    -0.02  0.14     0.53      -0.10
+snowfall             -0.27    -0.02     1.00 -0.27     0.07       0.02
+temp                  0.75     0.14    -0.27  1.00     0.40      -0.26
+humidity              0.04     0.53     0.07  0.40     1.00      -0.23
+wind_speed           -0.19    -0.10     0.02 -0.26    -0.23       1.00
+visibility            0.17    -0.22    -0.10  0.00    -0.56       0.21
+dew_point_temp        0.65     0.26    -0.21  0.96     0.63      -0.29
+solar_radiation       0.74    -0.32    -0.23  0.55    -0.27       0.10
+                visibility dew_point_temp solar_radiation
+bike_count            0.17           0.65            0.74
+rainfall             -0.22           0.26           -0.32
+snowfall             -0.10          -0.21           -0.23
+temp                  0.00           0.96            0.55
+humidity             -0.56           0.63           -0.27
+wind_speed            0.21          -0.29            0.10
+visibility            1.00          -0.15            0.27
+dew_point_temp       -0.15           1.00            0.38
+solar_radiation       0.27           0.38            1.00</code></pre>
+</div>
+</div>
+<p>I also looked specifically at the correlations with bike rentals.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>bike_cor[, <span class="st">"bike_count"</span>] <span class="sc">|&gt;</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sort</span>(<span class="at">decreasing =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     bike_count            temp solar_radiation  dew_point_temp      visibility 
+     1.00000000      0.75307673      0.73589290      0.65047655      0.16599375 
+       humidity      wind_speed        rainfall        snowfall 
+     0.03588697     -0.19288142     -0.23910905     -0.26529110 </code></pre>
+</div>
+</div>
+</section>
 </section>
 
 </main>

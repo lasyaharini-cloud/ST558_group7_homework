@@ -201,3 +201,104 @@ dim(bike_daily)
 ```
 
 The daily dataset now has 353 rows and 12 columns.
+
+
+## Part 3: Exploring Daily Bike Rentals
+
+Now that the hourly data has been combined into daily observations, I looked at how bike rentals vary over time and across different weather conditions.
+
+### Distribution of Daily Bike Rentals
+
+I first used a histogram to look at the distribution of daily bike rentals.
+
+```{r}
+ggplot(bike_daily, aes(x = bike_count)) +
+  geom_histogram(bins = 30, fill = "steelblue", color = "white") +
+  labs(
+    title = "Distribution of Daily Bike Rentals",
+    x = "Daily Bike Rentals",
+    y = "Number of Days"
+  ) +
+  theme_minimal()
+```
+
+### Bike Rentals Over Time
+
+I plotted daily bike rentals over time to see how rental activity changes throughout the year.
+
+```{r}
+ggplot(bike_daily, aes(x = date, y = bike_count)) +
+  geom_line(color = "steelblue") +
+  labs(
+    title = "Daily Bike Rentals Over Time",
+    x = "Date",
+    y = "Number of Bikes Rented"
+  ) +
+  theme_minimal()
+```
+
+### Bike Rentals by Season
+
+I used boxplots to compare daily bike rentals across seasons.
+
+```{r}
+ggplot(bike_daily, aes(x = seasons, y = bike_count)) +
+  geom_boxplot(fill = "lightblue") +
+  labs(
+    title = "Daily Bike Rentals by Season",
+    x = "Season",
+    y = "Daily Bike Rentals"
+  ) +
+  theme_minimal()
+```
+
+### Bike Rentals by Holiday
+
+I also compared the number of bikes rented on holidays and non-holidays.
+
+```{r}
+ggplot(bike_daily, aes(x = holiday, y = bike_count)) +
+  geom_boxplot(fill = "lightgreen") +
+  labs(
+    title = "Daily Bike Rentals by Holiday",
+    x = "Holiday",
+    y = "Daily Bike Rentals"
+  ) +
+  theme_minimal()
+```
+
+### Temperature and Bike Rentals
+
+I created a scatterplot to examine the relationship between average temperature and daily bike rentals.
+
+```{r}
+ggplot(bike_daily, aes(x = temp, y = bike_count)) +
+  geom_point(alpha = 0.5, color = "steelblue") +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(
+    title = "Temperature vs Daily Bike Rentals",
+    x = "Average Temperature (C)",
+    y = "Daily Bike Rentals"
+  ) +
+  theme_minimal()
+```
+
+### Correlations Between Numeric Variables
+
+I calculated correlations to see which numeric variables have stronger linear relationships with bike rentals.
+
+```{r}
+bike_cor <- bike_daily |>
+  select(where(is.numeric)) |>
+  cor(use = "complete.obs")
+
+round(bike_cor, 2)
+```
+
+I also looked specifically at the correlations with bike rentals.
+
+```{r}
+bike_cor[, "bike_count"] |>
+  sort(decreasing = TRUE)
+```
+
