@@ -8,13 +8,11 @@ editor: source
 
 ## Introduction
 
-In this homework, I will explore the Seoul Bike Sharing
-dataset and use multiple linear regression to predict
-daily bike rentals. I will first clean and summarize the
-data, then compare three regression models using their
-test-set RMSE.
+In this homework, I will explore the Seoul Bike Sharing dataset. I will clean the data, look at summary statistics, and prepare it for regression modeling.
 
-## Load Packages
+## Part 1: Reading the Data
+
+### Loading Packages
 
 ```{r}
 library(tidyverse)
@@ -22,10 +20,9 @@ library(lubridate)
 library(rsample)
 ```
 
-## Read the Data
+### Reading the Dataset
 
-The dataset contains hourly bike rental information
-along with weather and calendar variables.
+The dataset contains hourly bike rentals and weather information from Seoul.
 
 ```{r}
 bike_data <- read_csv(
@@ -36,3 +33,171 @@ bike_data <- read_csv(
 head(bike_data)
 dim(bike_data)
 ```
+
+The dataset has 8,760 rows and 14 columns.
+
+## Part 2: Exploratory Data Analysis
+
+### Checking Missing Values
+
+First, I checked whether the dataset contains any missing values.
+
+```{r}
+colSums(is.na(bike_data))
+```
+
+There are no missing values in the dataset.
+
+### Checking Column Types
+
+I checked the data types and summary statistics to understand the variables.
+
+```{r}
+str(bike_data)
+
+bike_data |>
+  select(where(is.numeric)) |>
+  summary()
+```
+
+### Checking Categorical Variables
+
+I checked the values in the categorical columns.
+
+```{r}
+unique(bike_data$Seasons)
+unique(bike_data$Holiday)
+unique(bike_data$`Functioning Day`)
+```
+
+### Converting Date
+
+The Date column was stored as text, so I converted it into a date format.
+
+```{r}
+bike_data <- bike_data |>
+  mutate(Date = dmy(Date))
+
+head(bike_data$Date)
+```
+
+### Converting Categorical Variables
+
+I converted the categorical variables into factors.
+
+```{r}
+bike_data <- bike_data |>
+  mutate(
+    Seasons = as.factor(Seasons),
+    Holiday = as.factor(Holiday),
+    `Functioning Day` = as.factor(`Functioning Day`)
+  )
+
+str(bike_data)
+```
+
+### Renaming Columns
+
+I renamed the variables using lower snake case to make them easier to use.
+
+```{r}
+bike_data <- bike_data |>
+  rename_with(~ "date", .cols = Date) |>
+  rename_with(~ "bike_count", .cols = `Rented Bike Count`) |>
+  rename_with(~ "hour", .cols = Hour) |>
+  rename_with(~ "temp", .cols = starts_with("Temperature")) |>
+  rename_with(~ "humidity", .cols = starts_with("Humidity")) |>
+  rename_with(~ "wind_speed", .cols = starts_with("Wind speed")) |>
+  rename_with(~ "visibility", .cols = starts_with("Visibility")) |>
+  rename_with(~ "dew_point_temp", .cols = starts_with("Dew point")) |>
+  rename_with(~ "solar_radiation", .cols = starts_with("Solar Radiation")) |>
+  rename_with(~ "rainfall", .cols = starts_with("Rainfall")) |>
+  rename_with(~ "snowfall", .cols = starts_with("Snowfall")) |>
+  rename_with(~ "seasons", .cols = Seasons) |>
+  rename_with(~ "holiday", .cols = Holiday) |>
+  rename_with(~ "functioning_day", .cols = `Functioning Day`)
+
+names(bike_data)
+```
+
+### Summary Statistics
+
+I calculated the mean, median, minimum, and maximum number of bike rentals.
+
+```{r}
+bike_data |>
+  summarize(
+    mean_bikes = mean(bike_count),
+    median_bikes = median(bike_count),
+    min_bikes = min(bike_count),
+    max_bikes = max(bike_count)
+  )
+```
+
+I also compared bike rentals across seasons, holidays, and functioning days.
+
+```{r}
+bike_data |>
+  group_by(seasons) |>
+  summarize(
+    count = n(),
+    avg_bikes = mean(bike_count),
+    .groups = "drop"
+  )
+
+bike_data |>
+  group_by(holiday) |>
+  summarize(
+    count = n(),
+    avg_bikes = mean(bike_count),
+    .groups = "drop"
+  )
+
+bike_data |>
+  group_by(functioning_day) |>
+  summarize(
+    count = n(),
+    avg_bikes = mean(bike_count),
+    .groups = "drop"
+  )
+```
+
+Bike rentals vary across seasons and holidays. Non-functioning hours have zero rentals.
+
+### Removing Non-Functioning Hours
+
+Since the bike rental system was not operating during non-functioning hours, I removed those observations.
+
+```{r}
+bike_data <- bike_data |>
+  filter(functioning_day == "Yes") |>
+  select(-functioning_day)
+
+dim(bike_data)
+```
+
+### Creating Daily Data
+
+I combined the hourly observations into daily observations. I used the sum for bike rentals, rainfall, and snowfall, and the mean for other weather variables.
+
+```{r}
+bike_daily <- bike_data |>
+  group_by(date, seasons, holiday) |>
+  summarize(
+    bike_count = sum(bike_count),
+    rainfall = sum(rainfall),
+    snowfall = sum(snowfall),
+    temp = mean(temp),
+    humidity = mean(humidity),
+    wind_speed = mean(wind_speed),
+    visibility = mean(visibility),
+    dew_point_temp = mean(dew_point_temp),
+    solar_radiation = mean(solar_radiation),
+    .groups = "drop"
+  )
+
+head(bike_daily)
+dim(bike_daily)
+```
+
+The daily dataset now has 353 rows and 12 columns.
