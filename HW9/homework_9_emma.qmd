@@ -1,0 +1,77 @@
+---
+title: "homework_9_emma"
+format: html
+editor: visual
+---
+
+*Bringing necessary packages into current session*
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(lubridate)
+```
+
+*Reading in data*
+
+```{r}
+seoul_bike_data <- read_csv('SeoulBikeData.csv', locale = locale(encoding = 'Latin1'))
+```
+
+*Checking for missing values*
+
+```{r}
+is.na(seoul_bike_data)
+#No NAs!
+```
+
+*Checking column types and values within columns*
+
+```{r}
+#Checking column types
+str(seoul_bike_data)
+
+#Checking summary statistics
+num_summaries <- seoul_bike_data |>
+  select(`Temperature(°C)`, `Humidity(%)`, `Wind speed (m/s)`, `Visibility (10m)`, `Dew point temperature(°C)`, `Solar Radiation (MJ/m2)`, `Rainfall(mm)`, `Snowfall (cm)`, `Rented Bike Count`, Hour)
+
+summary(num_summaries)
+
+#Checking categorical variable unique values
+unique(seoul_bike_data$Seasons)
+unique(seoul_bike_data$Holiday)
+unique(seoul_bike_data$`Functioning Day`)
+```
+
+*Changing **Date** data*
+
+```{r}
+#Date is stored in a day/month/year format as a character
+seoul_bike_data_new <- seoul_bike_data |>
+  mutate(Date = dmy(Date))
+
+str(seoul_bike_data_new$Date)
+```
+
+*Changing characters into factors*
+
+```{r}
+seoul_bike_data_cat <- seoul_bike_data_new |>
+  mutate(
+    Seasons = as.factor(Seasons),
+    Holiday = as.factor(Holiday),
+    `Functioning Day` = as.factor(`Functioning Day`)
+  )
+str(seoul_bike_data_cat$Seasons)
+str(seoul_bike_data_cat$Holiday)
+str(seoul_bike_data_cat$`Functioning Day`)
+```
+
+*Renaming all variables*
+
+```{r}
+seoul_bike_data_final <- seoul_bike_data_cat |>
+  rename(date = Date, rented_bike_count = `Rented Bike Count`, hour = Hour, temp = `Temperature(°C)`, humidity = `Humidity(%)`, windspeed = `Wind speed (m/s)`, visibility = `Visibility (10m)`, dew_point_temp = `Dew point temperature(°C)`, solar_rad = `Solar Radiation (MJ/m2)`, rainfall = `Rainfall(mm)`, snowfall = `Snowfall (cm)`, seasons = Seasons, holiday = Holiday, fun_day = `Functioning Day`)
+
+str(seoul_bike_data_final)
+```
