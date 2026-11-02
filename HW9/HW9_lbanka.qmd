@@ -302,3 +302,105 @@ bike_cor[, "bike_count"] |>
   sort(decreasing = TRUE)
 ```
 
+## Part 4: Splitting the Data
+
+Before fitting regression models, I divided the daily dataset into training and testing sets. I used 75% of the data for training and 25% for testing.
+
+I used a stratified split based on seasons so that the different seasons would be represented in both datasets.
+
+### Creating the Training and Testing Sets
+
+```{r}
+set.seed(558)
+
+bike_split <- initial_split(
+  bike_daily,
+  prop = 0.75,
+  strata = seasons
+)
+
+bike_train <- training(bike_split)
+bike_test <- testing(bike_split)
+```
+
+### Checking the Split
+
+I checked the number of observations in each dataset.
+
+```{r}
+nrow(bike_train)
+nrow(bike_test)
+```
+
+I also checked the distribution of seasons in the training and testing datasets.
+
+```{r}
+bike_train |>
+  count(seasons)
+
+bike_test |>
+  count(seasons)
+```
+
+### Creating a Weekend Variable
+
+Since bike rentals may differ between weekdays and weekends, I created a weekend indicator using the date.
+
+```{r}
+bike_train <- bike_train |>
+  mutate(
+    weekend = factor(
+      if_else(wday(date) %in% c(1, 7), "Weekend", "Weekday")
+    )
+  )
+
+bike_test <- bike_test |>
+  mutate(
+    weekend = factor(
+      if_else(wday(date) %in% c(1, 7), "Weekend", "Weekday")
+    )
+  )
+```
+
+### Standardizing Weather Variables
+
+I standardized the numeric weather predictors using the means and standard deviations from the training dataset.
+
+```{r}
+weather_vars <- c(
+  "temp",
+  "humidity",
+  "wind_speed",
+  "visibility",
+  "dew_point_temp",
+  "solar_radiation",
+  "rainfall",
+  "snowfall"
+)
+
+train_means <- bike_train |>
+  summarise(across(all_of(weather_vars), mean))
+
+train_sds <- bike_train |>
+  summarise(across(all_of(weather_vars), sd))
+
+for (v in weather_vars) {
+  bike_train[[paste0(v, "_z")]] <-
+    (bike_train[[v]] - train_means[[v]]) / train_sds[[v]]
+
+  bike_test[[paste0(v, "_z")]] <-
+    (bike_test[[v]] - train_means[[v]]) / train_sds[[v]]
+}
+```
+
+### Checking Standardized Variables
+
+I checked the standardized temperature variable to confirm that its mean is close to zero and its standard deviation is close to one in the training data.
+
+```{r}
+mean(bike_train$temp_z)
+sd(bike_train$temp_z)
+
+head(bike_train)
+```
+
