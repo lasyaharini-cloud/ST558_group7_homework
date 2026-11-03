@@ -8,7 +8,7 @@ editor: source
 
 ## Introduction
 
-In this homework, I will explore the Seoul Bike Sharing dataset. I will clean the data, look at summary statistics, and prepare it for regression modeling.
+In this homework, I will explore the Seoul Bike Sharing dataset. I will clean the data, look at summary statistics and prepare it for regression modeling.
 
 ## Part 1: Reading the Data
 
@@ -404,3 +404,144 @@ sd(bike_train$temp_z)
 head(bike_train)
 ```
 
+
+## Part 5: Regression Modeling
+
+In this section, I fit three linear regression models to predict daily bike rentals. I compared their performance using root mean squared error (RMSE) on the testing dataset.
+
+### Model 1: Main Effects
+
+The first model includes standardized weather variables, seasons, holiday status and weekend status.
+
+```{r}
+model1 <- lm(
+  bike_count ~ temp_z + humidity_z + wind_speed_z +
+    visibility_z + dew_point_temp_z + solar_radiation_z +
+    rainfall_z + snowfall_z + seasons + holiday + weekend,
+  data = bike_train
+)
+
+summary(model1)
+```
+
+### Model 2: Adding Interactions
+
+The second model includes the main effects and interactions between temperature and humidity, temperature and season and holiday and weekend status.
+
+```{r}
+model2 <- lm(
+  bike_count ~ temp_z + humidity_z + wind_speed_z +
+    visibility_z + dew_point_temp_z + solar_radiation_z +
+    rainfall_z + snowfall_z + seasons + holiday + weekend +
+    temp_z:humidity_z + temp_z:seasons + holiday:weekend,
+  data = bike_train
+)
+
+summary(model2)
+```
+
+### Model 3: Adding Quadratic Terms
+
+The third model includes the interactions from Model 2 and quadratic terms for temperature and humidity.
+
+```{r}
+model3 <- lm(
+  bike_count ~ temp_z + humidity_z + wind_speed_z +
+    visibility_z + dew_point_temp_z + solar_radiation_z +
+    rainfall_z + snowfall_z + seasons + holiday + weekend +
+    temp_z:humidity_z + temp_z:seasons + holiday:weekend +
+    I(temp_z^2) + I(humidity_z^2),
+  data = bike_train
+)
+
+summary(model3)
+```
+
+### Comparing Model Performance
+
+I calculated the RMSE for each model using the testing dataset. A lower RMSE indicates better predictive performance.
+
+```{r}
+rmse <- function(actual, predicted) {
+  sqrt(mean((actual - predicted)^2))
+}
+
+pred1 <- predict(model1, newdata = bike_test)
+pred2 <- predict(model2, newdata = bike_test)
+pred3 <- predict(model3, newdata = bike_test)
+
+model_results <- tibble(
+  model = c("Model 1", "Model 2", "Model 3"),
+  test_rmse = c(
+    rmse(bike_test$bike_count, pred1),
+    rmse(bike_test$bike_count, pred2),
+    rmse(bike_test$bike_count, pred3)
+  )
+)
+
+model_results
+```
+
+### Selecting the Best Model
+
+I selected the model with the lowest testing RMSE.
+
+```{r}
+best_model_name <- model_results |>
+  arrange(test_rmse) |>
+  slice(1) |>
+  pull(model)
+
+best_model_name
+```
+
+### Refitting the Best Model Using All Data
+
+After selecting the best model, I standardized the weather variables using the complete daily dataset and refit the model.
+
+```{r}
+bike_full <- bike_daily |>
+  mutate(
+    weekend = factor(
+      if_else(wday(date) %in% c(1, 7), "Weekend", "Weekday")
+    )
+  )
+
+for (v in weather_vars) {
+  bike_full[[paste0(v, "_z")]] <-
+    as.numeric(scale(bike_full[[v]]))
+}
+
+best_formula <- switch(
+  best_model_name,
+  "Model 1" = formula(model1),
+  "Model 2" = formula(model2),
+  "Model 3" = formula(model3)
+)
+
+final_model <- lm(best_formula, data = bike_full)
+
+summary(final_model)
+```
+
+### Final Model Coefficients
+
+I extracted the coefficients from the final model.
+
+```{r}
+final_coefficients <- tibble(
+  term = names(coef(final_model)),
+  estimate = as.numeric(coef(final_model))
+)
+
+final_coefficients
+```
+
+### Conclusion
+
+I compared three linear regression models to predict daily bike rentals. Model 1 had a testing RMSE of 4205 while Models 2 and 3 had RMSE values of 2835 and 2833 respectively. Model 3 performed slightly better than Model 2 and had the lowest testing RMSE. I selected Model 3 and refit it using the complete daily dataset. The final model had an adjusted R-squared value of 0.9173.
+
+```{r}
+model_results |>
+  arrange(test_rmse)
+```
