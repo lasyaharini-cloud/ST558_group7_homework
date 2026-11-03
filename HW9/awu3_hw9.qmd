@@ -1,0 +1,357 @@
+---
+title: "awu3_hw9"
+format: html
+editor: visual
+---
+
+## Basic Modeling Practice
+
+### Reading Data
+
+- Reading in the seoul bike data set
+
+```{r}
+library(dplyr)
+library(readr)
+library(tidyr)
+
+seoul_bike_data <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/SeoulBikeData.csv", locale=locale(encoding="latin1"))
+
+```
+
+### EDA
+
+- First lets check if there are any missing values in any of the columns
+
+```{r}
+#check each column for missing values
+seoul_bike_data |> summarise(across(everything(), ~sum(is.na(.x))))
+```
+
+- Next lets check the column types and see if they make sense
+
+```{r}
+#check column types
+str(seoul_bike_data)
+as.data.frame(seoul_bike_data)
+```
+
+- First thing that I notice is that the Date column is of type character instead of date so lets fix that with lubridate
+
+```{r}
+library(lubridate)
+seoul_bike_data <- seoul_bike_data |> mutate(Date = lubridate::dmy(Date))
+
+seoul_bike_data
+```
+
+- Now that we have converted dates to date objects lets look at some numeric summary stats and unique categorical values
+
+```{r}
+#numeric summaries 
+seoul_bike_data |> summarise(
+  across(
+    where(is.numeric),
+    list(
+      mean = ~ mean(.x),
+      median = ~ median(.x),
+      sd = ~ sd(.x),
+      min = ~ min(.x),
+      max = ~ max(.x)
+    )
+  )
+)
+
+#unique categorical values
+seoul_bike_data |> summarise(
+  across(
+    where(~ is.character(.x)),
+    ~ list(unique(.x))
+  ) 
+) |> pivot_longer(
+  cols = everything(),
+  names_to = "variable",
+  values_to = "values"
+) |> unnest_longer(values)
+```
+
+- We see that the categorical variables can be easily changed to factors as there are at max 4 unique values for seasons and the other variables have less unique values.
+
+- The numeric summaries seem reasonable with no na's or what seem like bad values so lets continue working on changing the categorical variables to factors
+
+```{r}
+#change categorical variables to factors
+seoul_bike_data <- seoul_bike_data |> mutate(Seasons = as.factor(Seasons),
+                                             Holiday = as.factor(Holiday),
+                                             `Functioning Day` = as.factor(`Functioning Day`))
+
+seoul_bike_data
+```
+
+- Now lets change column names to be easier to use
+
+```{r}
+
+seoul_bike_data <- seoul_bike_data |> rename(date = Date,
+                                             rented_bike_count = `Rented Bike Count`,
+                                             hour = Hour,
+                                             temperature = `Temperature(°C)`,
+                                             humidity = `Humidity(%)`,
+                                             wind_speed = `Wind speed (m/s)`,
+                                             visibility = `Visibility (10m)`,
+                                             dew_point_temperature = `Dew point temperature(°C)`,
+                                             solar_radiation = `Solar Radiation (MJ/m2)`,
+                                             rainfall = `Rainfall(mm)`,
+                                             snowfall = `Snowfall (cm)`,
+                                             seasons = Seasons,
+                                             holiday = Holiday,
+                                             functioning_day = `Functioning Day`
+)
+
+seoul_bike_data
+```
+
+- Lets do some more exploration with summary statistics across categorical variables
+
+```{r}
+seoul_bike_data |> group_by(seasons) |> summarise(
+  across(
+    where(is.numeric),
+    list(
+      mean = ~ mean(.x),
+      median = ~ median(.x),
+      sd = ~ sd(.x),
+      min = ~ min(.x),
+      max = ~ max(.x)
+    )
+  )
+)
+
+seoul_bike_data |> group_by(functioning_day) |> summarise(
+  across(
+    where(is.numeric),
+    list(
+      mean = ~ mean(.x),
+      median = ~ median(.x),
+      sd = ~ sd(.x),
+      min = ~ min(.x),
+      max = ~ max(.x)
+    )
+  )
+)
+
+seoul_bike_data |> group_by(holiday) |> summarise(
+  across(
+    where(is.numeric),
+    list(
+      mean = ~ mean(.x),
+      median = ~ median(.x),
+      sd = ~ sd(.x),
+      min = ~ min(.x),
+      max = ~ max(.x)
+    )
+  )
+)
+```
+
+- Looks like no bikes are rented when the functioning day is 'no' so we can subset the data to not include these observations
+
+```{r}
+
+seoul_bike_data <- seoul_bike_data |> filter(!functioning_day == 'No')
+
+```
+
+- Now lets do some analysis on grouped data
+
+```{r}
+grouped_sum_data <- seoul_bike_data |> group_by(date,seasons,holiday) |>
+  summarise(
+    sum_bike_count = sum(rented_bike_count),
+    sum_rainfall = sum(rainfall),
+    sum_snowfall = sum(snowfall),
+    mean_temperature = mean(temperature),
+    mean_humidity = mean(humidity),
+    mean_windspeed = mean(wind_speed),
+    mean_visibility = mean(visibility),
+    mean_dewpoint_temp = mean(dew_point_temperature),
+    mean_solar_radiation = mean(solar_radiation),
+    .groups = "drop"
+  )
+grouped_sum_data
+```
+
+- Now lets recreate our summary statistics with the new data-set for some data exploration.
+
+```{r}
+grouped_sum_data |> summarise(
+  across(
+    where(is.numeric),
+    list(
+      mean = ~ mean(.x),
+      median = ~ median(.x),
+      sd = ~ sd(.x),
+      min = ~ min(.x),
+      max = ~ max(.x)
+    )
+  )
+) |> pivot_longer(everything(),
+                  names_to = c("variable", ".value"),
+                  names_pattern = "(.*)_(mean|median|sd|min|max)")
+```
+
+- Now lets create some plots/statistics to explore relationships between different variables
+
+```{r}
+#bike counts across seasons
+grouped_sum_data |> group_by(seasons)|>summarise(mean =mean(sum_bike_count), sd = sd(sum_bike_count))
+
+#bike counts across holidays
+grouped_sum_data |> group_by(holiday)|>summarise(mean =mean(sum_bike_count), sd = sd(sum_bike_count))
+
+
+```
+
+- It seems that winter is by far the least popular season for bike rentals and summer and autumn are the most popular. Its hard to tell if the holidays affect bike rentals but assuming there are much less holidays than normal days, it can be concluded with some more exploration that these days are more popular for rentals.
+
+- Lets see the correlation between numeric variables
+
+```{r}
+# check correlation between numeric variables
+grouped_sum_data |> select(where(is.numeric)) |> cor()
+
+```
+
+- Looking at the sum bike count the most correlated variables by seems to be the mean temperature and mean solar radtiation with a cor value of about .75 and the next closest being mean dewpoint temp with value .65. There are some inverse relationships present but they dont seem to contribute as much as these three col/variables.
+
+```{r}
+library(ggplot2)
+
+#bike count vs temperature
+ggplot(grouped_sum_data, aes(x = mean_temperature, y = sum_bike_count)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  labs(
+    title = "Bike count by temperature and season",
+    x = "Temperature",
+    y = "Bike Count"
+  )
+
+#bike count vs solar radiation
+ggplot(grouped_sum_data, aes(x = mean_solar_radiation, y = sum_bike_count)) +
+  geom_point() + 
+  geom_smooth(method = "lm")
+
+
+#bike count by rainfall
+ggplot(grouped_sum_data, aes(x = sum_rainfall, y = sum_bike_count)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+#bike count by humidity
+ggplot(grouped_sum_data, aes(x = mean_humidity, y = sum_bike_count)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+- After looking at these plots it confirms what was found in the numeric correlations as variables such as rainfall and humidity do not seem to have any correlation with the rental bike count but a clear correlation can be seen with solar radiation and temperature with rental bike count.
+
+- Lets now split the data to prepare for training and testing a new model for predicting rental bike count
+
+```{r}
+library(tidymodels)
+#add weekday factor
+aug_data <- grouped_sum_data |> mutate(weekday = as.factor(if_else(wday(date, week_start = 1) %in% c(6,7), "weekend", "weekday")))
+
+set.seed(1)
+#split the augmented data set for training and testing
+bike_split <- rsample::initial_split(aug_data, prop=0.75, strata = seasons)
+
+bike_train <- training(bike_split)
+
+bike_test <- testing(bike_split)
+
+num_vars <- c("mean_temperature", "mean_humidity", "mean_windspeed",
+              "mean_visibility", "mean_dewpoint_temp", "mean_solar_radiation",
+              "sum_rainfall", "sum_snowfall")
+
+train_mean <- bike_train |> summarise(across(all_of(num_vars), mean))
+train_sd <- bike_train |> summarise(across(all_of(num_vars), sd))
+
+standarize_data <- function(data, means, sds) {
+  std <- sapply(num_vars, function(v) (data[[v]] - means[[v]]) / sds[[v]])
+  colnames(std) <- paste0(num_vars, "_std")
+  bind_cols(data, as_tibble(std))
+}
+
+bike_train <- standarize_data(bike_train,train_mean, train_sd)
+bike_test <- standarize_data(bike_test,train_mean, train_sd)
+
+```
+
+- Now lets fit different models with the data that we have standardized
+
+```{r}
+
+#model 1
+model_1 <- lm(
+  sum_bike_count ~ mean_temperature_std + mean_humidity_std + mean_windspeed_std +
+    mean_visibility_std + mean_dewpoint_temp_std + mean_solar_radiation_std +
+    sum_rainfall_std + sum_snowfall_std + seasons + holiday + weekday,
+  data = bike_train
+)
+
+#model 2
+model_2 <- lm(
+  sum_bike_count ~ mean_temperature_std + mean_humidity_std + mean_windspeed_std +
+    mean_visibility_std + mean_dewpoint_temp_std + mean_solar_radiation_std +
+    sum_rainfall_std + sum_snowfall_std + seasons + holiday + weekday +
+    seasons * holiday + seasons * mean_temperature_std +
+    mean_temperature_std * sum_rainfall_std,
+  data = bike_train
+)
+
+#model 3
+model_3 <- lm(
+  sum_bike_count ~ mean_temperature_std + mean_humidity_std + mean_windspeed_std +
+    mean_visibility_std + mean_dewpoint_temp_std + mean_solar_radiation_std +
+    sum_rainfall_std + sum_snowfall_std + seasons + holiday + weekday +
+    seasons * holiday + seasons * mean_temperature_std +
+    mean_temperature_std * sum_rainfall_std + I(mean_temperature_std^2) + I(mean_humidity_std^2),
+  data = bike_train
+)
+
+rmse <- function(actual, predicted) sqrt(mean((actual - predicted)^2))
+
+test_results <- tibble(
+  model = c("Model 1", "Model 2", "Model 3"),
+  test_rmse = c(
+    rmse(bike_test$sum_bike_count, predict(model_1, newdata = bike_test)),
+    rmse(bike_test$sum_bike_count, predict(model_2, newdata = bike_test)),
+    rmse(bike_test$sum_bike_count, predict(model_3, newdata = bike_test))
+  )
+)
+test_results
+
+
+#reproduce the model and standardization above with the full data
+full_data <- grouped_sum_data |> ungroup() |> mutate(weekday = as.factor(if_else(wday(date, week_start = 1) %in% c(6,7), "weekend", "weekday")))
+
+full_mean <- full_data |> summarise(across(all_of(num_vars), mean))
+full_sd <- full_data |> summarise(across(all_of(num_vars), sd))
+full_data <- standarize_data(full_data, full_mean, full_sd)
+
+final_model <- lm(
+  sum_bike_count ~ mean_temperature_std + mean_humidity_std + mean_windspeed_std +
+    mean_visibility_std + mean_dewpoint_temp_std + mean_solar_radiation_std +
+    sum_rainfall_std + sum_snowfall_std + seasons + holiday + weekday +
+    seasons:holiday + seasons:mean_temperature_std +
+    mean_temperature_std:sum_rainfall_std +
+    I(mean_temperature_std^2) + I(mean_humidity_std^2),
+  data = full_data
+)
+
+# Report the coefficients
+as.data.frame((coef(final_model))) |> arrange(desc(coef(final_model)))
+
+```
