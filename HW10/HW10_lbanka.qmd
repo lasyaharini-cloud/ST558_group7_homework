@@ -4,9 +4,7 @@ title: "HW 10: Modeling Practice"
 author: "Lasya Harini Banka"
 format: html
 ---
-
 ## Introduction
-
 In this homework, I will continue working with the Seoul Bike Sharing dataset from HW9. I will use the tidymodels package to fit different models and compare how well they predict daily bike rentals.
 
 ## Part 1: Reading the Data
@@ -203,3 +201,61 @@ bike_folds <- vfold_cv(
 
 bike_folds
 ```
+
+## Part 3: Splitting the Data
+
+I split the daily dataset into training and testing sets. I used 75% of the data for training and 25% for testing. I also used seasons to keep the seasonal distribution similar in both sets.
+
+```{r}
+set.seed(558)
+
+bike_split <- initial_split(
+  bike_daily,
+  prop = 0.75,
+  strata = seasons
+)
+
+bike_train <- training(bike_split)
+bike_test <- testing(bike_split)
+
+dim(bike_train)
+dim(bike_test)
+```
+
+### Creating 10-Fold Cross-Validation
+
+I created 10 folds using the training data. These folds will be used to compare the models before testing them on the test data.
+
+```{r}
+set.seed(558)
+
+bike_folds <- vfold_cv(
+  bike_train,
+  v = 10
+)
+
+bike_folds
+```
+
+## Part 4: Fitting Multiple Linear Regression Models
+
+### Recipe 1: Basic Model
+
+For the first model, I created a recipe to prepare the data for linear regression. I used the date to create a weekday or weekend variable and removed the date from the predictors. I also standardized the numeric predictors and created dummy variables for the categorical variables.
+
+```{r}
+recipe1 <- recipe(bike_count ~ ., data = bike_train) |>
+  step_date(date, features = "dow") |>
+  step_mutate(
+    day_type = factor(
+      if_else(date_dow %in% c("Sat", "Sun"),
+              "Weekend", "Weekday")
+    )
+  ) |>
+  step_rm(date, date_dow) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_dummy(all_nominal_predictors())
+
+recipe1
+```
+
