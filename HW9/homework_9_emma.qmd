@@ -1,0 +1,342 @@
+---
+title: "homework_9_emma"
+format: html
+editor: visual
+---
+
+*Bringing necessary packages into current session*
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(lubridate)
+library(rsample)
+```
+
+## PART ONE: CHECKING THE DATA
+
+*Reading in data*
+
+```{r}
+seoul_bike_data <- read_csv('SeoulBikeData.csv', locale = locale(encoding = 'Latin1'))
+```
+
+*Checking for missing values*
+
+```{r}
+is.na(seoul_bike_data)
+#No NAs!
+```
+
+*Checking column types and values within columns*
+
+```{r}
+#Checking column types
+str(seoul_bike_data)
+
+#Checking summary statistics
+num_summaries <- seoul_bike_data |>
+  select(`Temperature(°C)`, `Humidity(%)`, `Wind speed (m/s)`, `Visibility (10m)`, `Dew point temperature(°C)`, `Solar Radiation (MJ/m2)`, `Rainfall(mm)`, `Snowfall (cm)`, `Rented Bike Count`, Hour)
+
+summary(num_summaries)
+
+#Checking categorical variable unique values
+unique(seoul_bike_data$Seasons)
+unique(seoul_bike_data$Holiday)
+unique(seoul_bike_data$`Functioning Day`)
+```
+
+*Changing **Date** data*
+
+```{r}
+#Date is stored in a day/month/year format as a character
+seoul_bike_data_new <- seoul_bike_data |>
+  mutate(Date = dmy(Date))
+
+str(seoul_bike_data_new$Date)
+```
+
+*Changing characters into factors*
+
+```{r}
+seoul_bike_data_cat <- seoul_bike_data_new |>
+  mutate(
+    Seasons = as.factor(Seasons),
+    Holiday = as.factor(Holiday),
+    `Functioning Day` = as.factor(`Functioning Day`)
+  )
+str(seoul_bike_data_cat$Seasons)
+str(seoul_bike_data_cat$Holiday)
+str(seoul_bike_data_cat$`Functioning Day`)
+```
+
+*Renaming all variables*
+
+```{r}
+seoul_bike_data_final <- seoul_bike_data_cat |>
+  rename(date = Date, rented_bike_count = `Rented Bike Count`, hour = Hour, temp = `Temperature(°C)`, humidity = `Humidity(%)`, windspeed = `Wind speed (m/s)`, visibility = `Visibility (10m)`, dew_point_temp = `Dew point temperature(°C)`, solar_rad = `Solar Radiation (MJ/m2)`, rainfall = `Rainfall(mm)`, snowfall = `Snowfall (cm)`, seasons = Seasons, holiday = Holiday, fun_day = `Functioning Day`)
+
+str(seoul_bike_data_final)
+```
+
+*Creating summary statistics*
+
+```{r}
+#Calculating mean, sd, and median for bike rentals
+seoul_bike_data_final |>
+  summarize(mean_rent = mean(seoul_bike_data_final$rented_bike_count), med_rent = median(seoul_bike_data_final$rented_bike_count), sd_rent = sd(seoul_bike_data_final$rented_bike_count))
+
+seoul_bike_data_final |>
+  group_by(seasons) |>
+  summarize(mean_rent = mean(seoul_bike_data_final$rented_bike_count), med_rent = median(seoul_bike_data_final$rented_bike_count), sd_rent = sd(seoul_bike_data_final$rented_bike_count))
+
+seoul_bike_data_final |>
+  group_by(holiday) |>
+  summarize(mean_rent = mean(seoul_bike_data_final$rented_bike_count), med_rent = median(seoul_bike_data_final$rented_bike_count), sd_rent = sd(seoul_bike_data_final$rented_bike_count))
+
+seoul_bike_data_final |>
+  group_by(fun_day) |>
+  summarize(mean_rent = mean(seoul_bike_data_final$rented_bike_count), med_rent = median(seoul_bike_data_final$rented_bike_count), sd_rent = sd(seoul_bike_data_final$rented_bike_count))
+
+#Filtering out days that were not functioning
+new_bike_data <- seoul_bike_data_final |>
+  filter(fun_day != 'No')
+
+new_bike_data$fun_day
+```
+
+*Summarizing daily data*
+
+```{r}
+#Getting all of the means and sums for the numeric variables
+day_bike_data <- new_bike_data |>
+  group_by(date, seasons, holiday) |>
+  summarize(
+    bike_sum = sum(rented_bike_count),
+    rain_sum = sum(rainfall),
+    snow_sum = sum(snowfall),
+    mean_hum = mean(humidity),
+    mean_temp = mean(temp),
+    mean_wind = mean(windspeed),
+    mean_dew = mean(dew_point_temp),
+    mean_solar = mean(solar_rad),
+    mean_vis = mean(visibility),
+    .groups = 'drop'
+  )
+
+str(day_bike_data)
+```
+
+*Recreating summary stats*
+
+~Summaries~
+
+```{r}
+#Finding mean, median, and standard deviation for bike_sum, with the last two being across the seasons and holiday categories
+day_bike_data |>
+  summarize(mean_bike = mean(bike_sum), med_bike = median(bike_sum), sd_bike = sd(bike_sum))
+
+day_bike_data |>
+  group_by(seasons) |>
+  summarize(mean_bike = mean(bike_sum), med_bike = median(bike_sum), sd_bike = sd(bike_sum))
+
+day_bike_data |>
+  group_by(holiday) |>
+  summarize(mean_bike = mean(bike_sum), med_bike = median(bike_sum), sd_bike = sd(bike_sum))
+
+```
+
+~Plots~
+
+```{r}
+#Making a heatmap to analyze the density of bike rentals depending both on if it was a holiday and the season
+ggplot(day_bike_data |>
+         drop_na(seasons, holiday, bike_sum), aes(x = seasons, y = holiday, fill = bike_sum)) +
+  geom_tile(color = 'white') +
+  scale_fill_gradient(low = 'white', high = 'red') +
+  labs(title = "Analysis of Density of Bike Rentals by 'Holiday' and 'Seasons' Categories", x = 'Seasons', y = 'Holiday', fill = '# of Bike Rentals')
+```
+
+```{r}
+#Making a scatterplot to see if there are more or less bike rentals depending on the amount of rainfall
+ggplot(day_bike_data |>
+         drop_na(bike_sum, rain_sum), aes(x = bike_sum, y = rain_sum)) +
+  geom_point() +
+  labs(title = 'Analysis of Relationship Between Bike Rentals and Rainfall', x = '# of Bike Rentals', y = 'Rainfall')
+```
+
+```{r}
+#Making another scatterplot to see if there are more or less bike rentals depending on the amount of snowfall
+ggplot(day_bike_data |>
+         drop_na(bike_sum, snow_sum), aes(x = bike_sum, y = snow_sum)) +
+  geom_point() +
+  labs(title = 'Analysis of Relationship Between Bike Rentals and Snowfall', x = '# of Bike Rentals', y = 'Snowfall')
+```
+
+```{r}
+#Making line graph that compares bike rentals with dew point temperature
+ggplot(day_bike_data |>
+         drop_na(bike_sum, mean_dew), aes(x = mean_dew, y = bike_sum)) +
+  geom_line() +
+  labs(title = 'Analysis of Bike Rentals and Dew Point Temperature', x = 'Dew Point Temperature', y = '# of Bike Rentals')
+```
+
+~Correlations~
+
+```{r}
+#Calling all numeric variables
+correlations <- day_bike_data |>
+  select(rain_sum, snow_sum, mean_hum, mean_temp, mean_wind, mean_dew, mean_solar, mean_vis)
+
+#Finding correlations between the bike_sum variable and all other numeric variables
+cor(day_bike_data$bike_sum, correlations)
+```
+
+## PART TWO: SPLIT THE DATA
+
+```{r}
+#Splitting data
+split_data <- rsample::initial_split(day_bike_data, prop = 0.75, strata = seasons)
+split_data
+
+#Naming split sets
+training_split <- training(split_data)
+test_split <- testing(split_data)
+```
+
+## PART THREE: FITTING MLR MODELS
+
+*Creating **weekend/weekday** variables in the training and test sets*
+
+```{r}
+#Creating weekend_or_weekday variable for training set
+split_data_train <- training_split |>
+  mutate(weekend_or_weekday = factor(if_else(wday(date) %in% c(1,7), 'weekend', 'weekday')))
+
+#Creating weekend_or_weekday variable for test set
+split_data_test <- test_split |>
+  mutate(weekend_or_weekday = factor(if_else(wday(date) %in% c(1,7), 'weekend', 'weekday')))
+
+split_data_train
+split_data_test
+```
+
+*Creating standardized versions of numeric variables*
+
+```{r}
+#Creating a vector with all numeric variables
+numeric_vars <- c('mean_hum', 'mean_temp', 'mean_wind', 'mean_dew', 'mean_solar', 'mean_vis', 'rain_sum', 'snow_sum')
+
+#Finding mean for all numeric variables
+num_mean <- split_data_train |>
+  summarize(across(all_of(numeric_vars), mean))
+
+num_mean
+
+#Finding standard deviation for all numeric variables
+num_sd <- split_data_train |>
+  summarize(across(all_of(numeric_vars), sd))
+
+num_sd
+
+#Creating standardized versions of all numeric variables
+for(v in numeric_vars){
+  split_data_train[[paste0(v,'_standardized')]] <- 
+    (split_data_train[[v]] - num_mean[[v]]) / num_sd[[v]]
+  
+  split_data_test[[paste0(v, '_standardized')]] <-
+    (split_data_test[[v]] - num_mean[[v]]) / num_sd[[v]]
+}
+
+
+mean(split_data_train$snow_sum_standardized)
+sd(split_data_train$snow_sum_standardized)
+```
+
+*Fitting first model*
+
+```{r}
+#This model includes all standardized numeric variables as well as seasons, holiday, and the weekend_or_weekday variable created earlier
+model_1 <- lm(
+  bike_sum ~ mean_temp_standardized + mean_hum_standardized + mean_wind_standardized + mean_dew_standardized + mean_solar_standardized + mean_vis_standardized + rain_sum_standardized + snow_sum_standardized + seasons + holiday + weekend_or_weekday,
+  data = split_data_train
+)
+```
+
+*Fitting second model*
+
+```{r}
+#This model uses the same variables as model_1 but includes interactions between seasons and holiday, seasons and mean temperature, and mean temperature and the rain sum
+model_2 <- lm(
+  bike_sum ~ mean_temp_standardized + mean_hum_standardized + mean_wind_standardized + mean_dew_standardized + mean_solar_standardized + mean_vis_standardized + rain_sum_standardized + snow_sum_standardized + seasons + holiday + weekend_or_weekday + seasons * holiday + seasons * mean_temp_standardized + mean_temp_standardized * rain_sum_standardized,
+  data = split_data_train
+)
+```
+
+*Fitting third model*
+
+```{r}
+#This model takes everything from model_2 and adds squared terms for temperature and humidity
+model_3 <- lm(
+  bike_sum ~ mean_temp_standardized + mean_hum_standardized + mean_wind_standardized + mean_dew_standardized + mean_solar_standardized + mean_vis_standardized + rain_sum_standardized + snow_sum_standardized + seasons + holiday + weekend_or_weekday + seasons * holiday + seasons * mean_temp_standardized + mean_temp_standardized * rain_sum_standardized + I(mean_temp_standardized^2) + I(mean_hum_standardized^2),
+  data = split_data_train
+)
+```
+
+*Finding the RMSE*
+
+```{r}
+#Making an 'rmse' function that can be used on the models
+rmse <- function(actual, predicted){
+  sqrt(mean((actual - predicted)^2))
+}
+
+#Using predict
+model_1_pred <- predict(model_1, newdata = split_data_test)
+model_2_pred <- predict(model_2, newdata = split_data_test)
+model_3_pred <- predict(model_3, newdata = split_data_test)
+
+#Using 'rmse' to find the best fit model and putting the results into a tibble
+test_all <- tibble(
+  model = c('Model 1', 'Model 2', 'Model 3'),
+  rmse_result = c(
+    rmse(split_data_test$bike_sum, model_1_pred),
+    rmse(split_data_test$bike_sum, model_2_pred),
+    rmse(split_data_test$bike_sum, model_3_pred)
+  )
+)
+
+test_all
+```
+
+*Fitting the best model to the entire data set (model_3 is the one we want to use for this because it has the lowest RMSE!)*
+
+```{r}
+#Reproducing the standardization and alterations to the data set
+final_data <- day_bike_data |>
+  ungroup() |>
+  mutate(weekend_or_weekday = factor(if_else(wday(date) %in% c(1,7), 'weekend', 'weekday')))
+
+final_mean <- final_data|>
+  summarize(across(all_of(numeric_vars), mean))
+
+final_sd <- final_data |>
+  summarize(across(all_of(numeric_vars), sd))
+
+for(v in numeric_vars){
+  final_data[[paste0(v,'_standardized')]] <- 
+    (final_data[[v]] - final_mean[[v]]) / final_sd[[v]]
+}
+
+#Creating final model for full data
+final_model <- lm(
+  bike_sum ~ mean_temp_standardized + mean_hum_standardized + mean_wind_standardized + mean_dew_standardized + mean_solar_standardized + mean_vis_standardized + rain_sum_standardized + snow_sum_standardized + seasons + holiday + weekend_or_weekday + seasons * holiday + seasons * mean_temp_standardized + mean_temp_standardized * rain_sum_standardized + I(mean_temp_standardized^2) + I(mean_hum_standardized^2),
+  data = final_data
+)
+
+#Reporting coefficients in a tibble
+final_tibble <- tibble(coef(final_model)) |>
+  arrange(desc(coef(final_model)))
+
+final_tibble
+```
