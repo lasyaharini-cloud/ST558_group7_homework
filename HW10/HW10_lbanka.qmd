@@ -202,41 +202,6 @@ bike_folds <- vfold_cv(
 bike_folds
 ```
 
-## Part 3: Splitting the Data
-
-I split the daily dataset into training and testing sets. I used 75% of the data for training and 25% for testing. I also used seasons to keep the seasonal distribution similar in both sets.
-
-```{r}
-set.seed(558)
-
-bike_split <- initial_split(
-  bike_daily,
-  prop = 0.75,
-  strata = seasons
-)
-
-bike_train <- training(bike_split)
-bike_test <- testing(bike_split)
-
-dim(bike_train)
-dim(bike_test)
-```
-
-### Creating 10-Fold Cross-Validation
-
-I created 10 folds using the training data. These folds will be used to compare the models before testing them on the test data.
-
-```{r}
-set.seed(558)
-
-bike_folds <- vfold_cv(
-  bike_train,
-  v = 10
-)
-
-bike_folds
-```
-
 ## Part 4: Fitting Multiple Linear Regression Models
 
 ### Recipe 1: Basic Model
@@ -259,3 +224,184 @@ recipe1 <- recipe(bike_count ~ ., data = bike_train) |>
 recipe1
 ```
 
+
+### Recipe 2: Adding Interaction Terms
+
+For the second recipe, I used the same preprocessing steps as Recipe 1 and added interactions between seasons and holiday, seasons and temperature and temperature and rainfall.
+
+```{r}
+recipe2 <- recipe(bike_count ~ ., data = bike_train) |>
+  step_date(date, features = "dow") |>
+  step_mutate(
+    day_type = factor(
+      if_else(date_dow %in% c("Sat", "Sun"),
+              "Weekend", "Weekday")
+    )
+  ) |>
+  step_rm(date, date_dow) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_dummy(all_nominal_predictors()) |>
+ step_interact(
+  terms = ~ starts_with("seasons_"):starts_with("holiday_") +
+    starts_with("seasons_"):temp +
+    temp:rainfall
+)
+
+recipe2
+```
+
+### Recipe 3: Adding Quadratic Terms
+
+For the third recipe, I kept the interactions from Recipe 2 and added squared terms for standardized temperature and humidity. This allows the model to capture possible curved relationships with bike rentals.
+
+```{r}
+recipe3 <- recipe(bike_count ~ ., data = bike_train) |>
+  step_date(date, features = "dow") |>
+  step_mutate(
+    day_type = factor(
+      if_else(date_dow %in% c("Sat", "Sun"),
+              "Weekend", "Weekday")
+    )
+  ) |>
+  step_rm(date, date_dow) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_dummy(all_nominal_predictors()) |>
+step_interact(
+  terms = ~ starts_with("seasons_"):starts_with("holiday_") +
+    starts_with("seasons_"):temp +
+    temp:rainfall
+) |>
+step_mutate(
+  temp_squared = temp^2,
+  humidity_squared = humidity^2
+)
+
+recipe3
+
+```
+
+### Setting Up the Linear Regression Model
+
+I used linear regression with the lm engine to fit all three recipes.
+
+```{r}
+lm_model <- linear_reg() |>
+  set_engine("lm")
+
+lm_model
+```
+
+### Creating Workflows
+
+I created a separate workflow for each recipe using the same linear regression model.
+
+```{r}
+workflow1 <- workflow() |>
+  add_recipe(recipe1) |>
+  add_model(lm_model)
+
+workflow2 <- workflow() |>
+  add_recipe(recipe2) |>
+  add_model(lm_model)
+
+workflow3 <- workflow() |>
+  add_recipe(recipe3) |>
+  add_model(lm_model)
+```
+
+### Fitting Models Using 10-Fold Cross-Validation
+
+I used the 10 folds created earlier to evaluate the three models. I used RMSE to compare their prediction errors.
+
+```{r}
+set.seed(558)
+
+lm_cv1 <- fit_resamples(
+  workflow1,
+  resamples = bike_folds,
+  metrics = metric_set(rmse, mae)
+)
+
+lm_cv2 <- fit_resamples(
+  workflow2,
+  resamples = bike_folds,
+  metrics = metric_set(rmse, mae)
+)
+
+lm_cv3 <- fit_resamples(
+  workflow3,
+  resamples = bike_folds,
+  metrics = metric_set(rmse, mae)
+)
+
+```
+
+### Checking Cross-Validation Warnings
+
+Models 2 and 3 produced a rank-deficiency warning in Fold06 during cross-validation. This may be related to the interaction terms and limited variation in that fold. The models still produced cross-validation results, so I continued comparing them using RMSE and MAE.
+
+### Comparing the Three Models
+
+I collected the cross-validation results and compared the average RMSE and MAE for each model.
+
+```{r}
+lm_results <- bind_rows(
+  collect_metrics(lm_cv1) |> mutate(model = "Model 1"),
+  collect_metrics(lm_cv2) |> mutate(model = "Model 2"),
+  collect_metrics(lm_cv3) |> mutate(model = "Model 3")
+)
+
+lm_results |>
+  select(model, .metric, mean, std_err)
+```
+
+### Selecting the Best Linear Regression Model
+
+I selected the model with the lowest average cross-validation RMSE.
+
+```{r}
+best_lm <- lm_results |>
+  filter(.metric == "rmse") |>
+  arrange(mean) |>
+  slice(1)
+
+best_lm
+```
+
+### Fitting the Selected Model
+
+I used the selected recipe and fitted the model using the full training portion of the original split.
+
+```{r}
+best_workflow <- switch(
+  best_lm$model[[1]],
+  "Model 1" = workflow1,
+  "Model 2" = workflow2,
+  "Model 3" = workflow3
+)
+
+final_lm <- last_fit(
+  best_workflow,
+  split = bike_split,
+  metrics = metric_set(rmse, mae)
+)
+
+collect_metrics(final_lm)
+```
+
+### Final Linear Regression Coefficients
+
+I extracted the fitted linear regression model and displayed its coefficients.
+
+```{r}
+final_lm_fit <- extract_workflow(final_lm) |>
+  extract_fit_parsnip()
+
+tidy(final_lm_fit)
+```
+
+### Linear Regression Results
+
+Among the three linear regression models, Model 3 had the lowest cross-validation RMSE of approximately 3,046. This model included interaction terms and quadratic terms for temperature and humidity.
+
+When I evaluated Model 3 on the test data, the RMSE was approximately 3,059 and the MAE was 2,132. These results suggest that adding interactions and quadratic terms improved prediction accuracy compared with the basic linear regression model.
