@@ -432,6 +432,61 @@ dbl (10): Rented Bike Count, Hour, Temperature(°C), Humidity(%), Wind speed ...
 <p>The daily dataset has 353 rows and 12 columns.</p>
 </section>
 </section>
+<section id="part-3-splitting-the-data" class="level2">
+<h2 class="anchored" data-anchor-id="part-3-splitting-the-data">Part 3: Splitting the Data</h2>
+<p>I split the daily dataset into training and testing sets. I used 75% of the data for training and 25% for testing. I also used seasons to keep the seasonal distribution similar in both sets.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">558</span>)</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>bike_split <span class="ot">&lt;-</span> <span class="fu">initial_split</span>(</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>  bike_daily,</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">prop =</span> <span class="fl">0.75</span>,</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">strata =</span> seasons</span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>bike_train <span class="ot">&lt;-</span> <span class="fu">training</span>(bike_split)</span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>bike_test <span class="ot">&lt;-</span> <span class="fu">testing</span>(bike_split)</span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(bike_train)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 263  12</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(bike_test)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 90 12</code></pre>
+</div>
+</div>
+<section id="creating-10-fold-cross-validation" class="level3">
+<h3 class="anchored" data-anchor-id="creating-10-fold-cross-validation">Creating 10-Fold Cross-Validation</h3>
+<p>I created 10 folds using the training data. These folds will be used to compare the models before testing them on the test data.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">558</span>)</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>bike_folds <span class="ot">&lt;-</span> <span class="fu">vfold_cv</span>(</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>  bike_train,</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">v =</span> <span class="dv">10</span></span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a>bike_folds</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>#  10-fold cross-validation 
+# A tibble: 10 × 2
+   splits           id    
+   &lt;list&gt;           &lt;chr&gt; 
+ 1 &lt;split [236/27]&gt; Fold01
+ 2 &lt;split [236/27]&gt; Fold02
+ 3 &lt;split [236/27]&gt; Fold03
+ 4 &lt;split [237/26]&gt; Fold04
+ 5 &lt;split [237/26]&gt; Fold05
+ 6 &lt;split [237/26]&gt; Fold06
+ 7 &lt;split [237/26]&gt; Fold07
+ 8 &lt;split [237/26]&gt; Fold08
+ 9 &lt;split [237/26]&gt; Fold09
+10 &lt;split [237/26]&gt; Fold10</code></pre>
+</div>
+</div>
+</section>
+</section>
 
 </main>
 <!-- /main column -->

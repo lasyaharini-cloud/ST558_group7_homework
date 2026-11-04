@@ -168,3 +168,38 @@ dim(bike_daily)
 ```
 
 The daily dataset has 353 rows and 12 columns.
+
+## Part 3: Splitting the Data
+
+I split the daily dataset into training and testing sets. I used 75% of the data for training and 25% for testing. I also used seasons to keep the seasonal distribution similar in both sets.
+
+```{r}
+set.seed(558)
+
+bike_split <- initial_split(
+  bike_daily,
+  prop = 0.75,
+  strata = seasons
+)
+
+bike_train <- training(bike_split)
+bike_test <- testing(bike_split)
+
+dim(bike_train)
+dim(bike_test)
+```
+
+### Creating 10-Fold Cross-Validation
+
+I created 10 folds using the training data. These folds will be used to compare the models before testing them on the test data.
+
+```{r}
+set.seed(558)
+
+bike_folds <- vfold_cv(
+  bike_train,
+  v = 10
+)
+
+bike_folds
+```
