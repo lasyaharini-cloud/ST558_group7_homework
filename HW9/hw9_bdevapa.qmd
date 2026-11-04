@@ -1,0 +1,243 @@
+---
+title: "hw9_bdevapa"
+format: html
+editor: visual 
+---
+
+# HW 9 - Basic Modeling Practice
+
+## Read the bike data
+
+This data set is about bike sharing rentals
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(readr)
+library(lubridate)
+library(ggplot2)
+library(rsample)
+bike_data <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/SeoulBikeData.csv",locale = locale(encoding="latin1"))
+bike_data
+
+
+```
+
+## EDA
+
+### Check for missingness
+
+```{r}
+colSums(is.na(bike_data))
+
+```
+
+### check column types/sanity-check values
+
+```{r}
+sapply(bike_data, class)
+summary(bike_data |> select(where(is.numeric)))
+unique(bike_data$Seasons)
+unique(bike_data$Holiday)
+unique(bike_data$`Functioning Day`)
+
+```
+
+### Parse the data, rename columns to snake_case, covert categoricals to factors
+
+```{r}
+
+bike <- bike_data 
+names(bike) <- c("date","rented_count","hour","temp", "humidity","wind_speed","visibility","dew_point_temp","solar_radiation",
+                 "rainfall","snowfall","seasons","holiday","functioning_day")
+
+bike <- bike |>
+  mutate(date = dmy(date)) |>
+  mutate(across(c(seasons, holiday, functioning_day), as.factor))
+
+bike
+
+```
+
+### Summary stats on rented_count, overall and by category
+
+```{r}
+summary(bike$rented_count)
+bike |> group_by(seasons) |> summarise(mean_count = mean(rented_count), n = n())
+bike |> group_by(holiday) |> summarise(mean_count = mean(rented_count), n = n())
+bike |> group_by(functioning_day) |> summarise(mean_count = mean(rented_count), n = n())
+
+
+
+```
+
+non-functioning day had zero rentals, which is self explanatory Let's filter out the non-functioning days
+
+```{r}
+bike <- bike |> filter(functioning_day == "Yes")
+bike
+```
+
+The above has data for hours \[0,24) Let's aggregate hourly to daily
+
+```{r}
+daily <- bike |>
+  group_by(date, seasons, holiday) |>
+  summarise(
+    rented_count = sum(rented_count),
+    rainfall = sum(rainfall),
+    snowfall = sum(snowfall),
+    temp = mean(temp),
+    humidity = mean(humidity),
+    wind_speed = mean(wind_speed),
+    visibility = mean(visibility),
+    dew_point_temp = mean(dew_point_temp),
+    solar_radiation = mean(solar_radiation),
+    .groups = "drop"
+  )
+daily
+
+```
+
+Let's summarize the daily bike data, plot
+
+```{r}
+summary(daily)
+
+ggplot(daily, aes(x = seasons, y = rented_count)) + 
+  geom_boxplot() + 
+  labs(title = "Daily Bike Rentals by Season", x = "Season", y = "Total Daily Rentals")
+
+ggplot(daily, aes(x = temp, y = rented_count, color = seasons)) + 
+  geom_point() + 
+  labs(title = "Daily Bike Rentals by Temperature", x = "Mean Daily Temp (C)", y = "Total Daily Rentals")
+
+```
+
+Let's correlate the data
+
+```{r}
+
+round(cor(daily |> select(where(is.numeric))),2)
+
+```
+
+temp vs rented_count has the highest correlation which is .75
+
+## Let's split the data into training and testing 75/25 split using seasons as strata argument
+
+```{r}
+
+
+set.seed(558)
+bike_split <- initial_split(daily, prop = 0.75, strata = seasons)
+bike_train <- training(bike_split)
+bike_test <- testing(bike_split)
+
+```
+
+## Let's add weekday/weekend factor (train & test separately)
+
+```{r}
+
+bike_train <- bike_train |>
+  mutate(day_type = factor(if_else(wday(date) %in% c(1,7), "weekend", "weekday")))
+
+bike_test <- bike_test |>
+  mutate(day_type = factor(if_else(wday(date) %in% c(1,7), "weekend", "weekday")))
+
+```
+
+## Let's standardize/normalize numeric variables
+
+```{r}
+
+num_cols <- c("temp","humidity","wind_speed","visibility","dew_point_temp","solar_radiation","rainfall","snowfall")
+
+train_means <- sapply(bike_train[num_cols], mean)
+train_sds <- sapply(bike_train[num_cols], sd)
+
+standardize_with <- function(df, means, sds, cols) {
+  for(col in cols) {
+    df[[paste0(col, "_std")]] <- (df[[col]] - means[[col]]) / sds[[col]]
+  }
+  df
+}
+
+bike_train <- standardize_with(bike_train, train_means, train_sds, num_cols)
+bike_test <- standardize_with(bike_test, train_means, train_sds, num_cols)
+
+```
+
+## Fit the three models
+
+```{r}
+
+model1 <- lm(
+  rented_count ~ temp_std + humidity_std + wind_speed_std + visibility_std + dew_point_temp_std + solar_radiation_std + rainfall_std + snowfall_std + seasons + holiday + day_type,
+  data = bike_train
+)
+
+model2 <- lm(
+  rented_count ~ temp_std + humidity_std + wind_speed_std + visibility_std + dew_point_temp_std + solar_radiation_std + rainfall_std + snowfall_std + seasons + holiday + day_type + seasons:holiday + seasons:temp_std + temp_std:rainfall_std,
+  data = bike_train
+)
+
+model3 <- lm(
+  rented_count ~ temp_std + humidity_std + wind_speed_std + visibility_std + dew_point_temp_std + solar_radiation_std + rainfall_std + snowfall_std + seasons + holiday + day_type + seasons:holiday + seasons:temp_std + temp_std:rainfall_std + I(temp_std^2) + I(humidity_std^2),
+  data = bike_train
+)
+
+```
+
+Let's write a function that does test-set RMSE for reach
+
+```{r}
+rmse <- function(model, newdata) {
+  preds <- predict(model, newdata = newdata)
+  sqrt(mean((newdata$rented_count - preds) ^ 2))
+}
+
+```
+
+Now let's test the models
+
+```{r}
+rsme_tbl <- tibble(
+  model = c("model1","model2","model3"),
+  test_rmse = c(rmse(model1,bike_test),rmse(model2,bike_test),rmse(model3,bike_test))
+)
+rsme_tbl
+```
+
+model3 has the lowest RSME
+
+Let's use this model to refit the data
+
+## Refit the winning model(model3) on the entire data set
+
+```{r}
+full_means <- sapply(daily[num_cols], mean)
+full_sds <- sapply(daily[num_cols], sd)
+
+daily_final <- standardize_with(daily, full_means, full_sds, num_cols)
+
+daily_final <- daily_final |>
+  mutate(day_type = factor(if_else(wday(date) %in% c(1,7), "weekend", "weekday")))
+
+daily_final
+
+```
+
+Let's fit the model with all of the data
+
+```{r}
+
+final_winning_model <- lm(
+  rented_count ~ temp_std + humidity_std + wind_speed_std + visibility_std + dew_point_temp_std + solar_radiation_std + rainfall_std + snowfall_std + seasons + holiday + day_type + seasons:holiday + seasons:temp_std + temp_std:rainfall_std + I(temp_std^2) + I(humidity_std^2),
+  data = daily_final
+)
+
+summary(final_winning_model)
+
+```
