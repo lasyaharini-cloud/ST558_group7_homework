@@ -405,3 +405,25 @@ tidy(final_lm_fit)
 Among the three linear regression models, Model 3 had the lowest cross-validation RMSE of approximately 3,046. This model included interaction terms and quadratic terms for temperature and humidity.
 
 When I evaluated Model 3 on the test data, the RMSE was approximately 3,059 and the MAE was 2,132. These results suggest that adding interactions and quadratic terms improved prediction accuracy compared with the basic linear regression model.
+
+## Part 5: Regression Tree
+
+In this section, I will fit a regression tree to predict daily bike rentals. A regression tree splits the data into smaller groups based on predictor values.
+
+### Creating the Regression Tree Recipe
+
+I created a recipe to prepare the data for the regression tree. I used the date to create a weekday or weekend variable and removed the original date column.
+
+```{r}
+tree_recipe <- recipe(bike_count ~ ., data = bike_train) |>
+  step_date(date, features = "dow") |>
+  step_mutate(
+    day_type = factor(
+      if_else(date_dow %in% c("Sat", "Sun"),
+              "Weekend", "Weekday")
+    )
+  ) |>
+  step_rm(date, date_dow)
+
+tree_recipe
+```
