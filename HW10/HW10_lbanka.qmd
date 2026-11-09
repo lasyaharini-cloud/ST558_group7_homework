@@ -427,3 +427,121 @@ tree_recipe <- recipe(bike_count ~ ., data = bike_train) |>
 
 tree_recipe
 ```
+
+### Setting Up the Regression Tree Model
+
+I used the rpart engine to fit a regression tree. I will tune the cost complexity, tree depth, and minimum number of observations in a node to find a model with lower prediction error.
+
+```{r}
+tree_model <- decision_tree(
+  cost_complexity = tune(),
+  tree_depth = tune(),
+  min_n = tune()
+) |>
+  set_engine("rpart") |>
+  set_mode("regression")
+
+tree_model
+```
+
+### Creating the Regression Tree Workflow
+
+I combined the regression tree recipe and model into a workflow.
+
+```{r}
+tree_workflow <- workflow() |>
+  add_recipe(tree_recipe) |>
+  add_model(tree_model)
+
+tree_workflow
+```
+
+### Creating the Tuning Grid
+
+I created a grid of values for cost complexity, tree depth, and minimum node size. I will compare these combinations using cross-validation to find the best regression tree.
+
+```{r}
+tree_grid <- grid_regular(
+  cost_complexity(),
+  tree_depth(),
+  min_n(),
+  levels = 3
+)
+
+tree_grid
+```
+
+### Tuning the Regression Tree
+
+I used 10-fold cross-validation to compare the different regression tree settings. I used RMSE and MAE to measure prediction error.
+
+```{r}
+set.seed(558)
+
+tree_tuned <- tune_grid(
+  tree_workflow,
+  resamples = bike_folds,
+  grid = tree_grid,
+  metrics = metric_set(rmse, mae)
+)
+
+collect_metrics(tree_tuned)
+```
+
+### Selecting the Best Regression Tree
+
+I selected the regression tree settings with the lowest average cross-validation RMSE.
+
+```{r}
+best_tree <- select_best(
+  tree_tuned,
+  metric = "rmse"
+)
+
+best_tree
+```
+
+### Fitting the Final Regression Tree
+
+I used the best tuning parameters to finalize the regression tree workflow. I then fitted the model on the training data and evaluated its predictions on the test data.
+
+```{r}
+final_tree_workflow <- finalize_workflow(
+  tree_workflow,
+  best_tree
+)
+
+final_tree <- last_fit(
+  final_tree_workflow,
+  split = bike_split,
+  metrics = metric_set(rmse, mae)
+)
+
+collect_metrics(final_tree)
+```
+
+### Comparing the Final Models
+
+I compared the test RMSE and MAE of the best linear regression model and the regression tree.
+
+```{r}
+model_comparison <- bind_rows(
+  collect_metrics(final_lm) |>
+    mutate(model = "Linear Regression"),
+  collect_metrics(final_tree) |>
+    mutate(model = "Regression Tree")
+)
+
+model_comparison |>
+  select(model, .metric, .estimate)
+```
+
+## Conclusion
+
+In this homework, I used the Seoul Bike Sharing dataset to compare multiple linear regression models and a regression tree for predicting daily bike rentals.
+
+Among the linear regression models, Model 3 performed the best. It included interaction terms and quadratic terms for temperature and humidity.
+
+The final linear regression model had a test RMSE of approximately 3,059 and MAE of 2,132. The regression tree had a higher RMSE of 3,814 and MAE of 2,866.
+
+Overall, the linear regression model performed better on the test data. This suggests that the interaction and quadratic terms helped capture the relationships in this dataset better than the regression tree.
