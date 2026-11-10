@@ -1,0 +1,354 @@
+---
+title: "awu3_HW10"
+format: html
+editor: visual
+---
+
+## Read in the Dataset
+
+```{r}
+library(lubridate)
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+bike_data <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/SeoulBikeData.csv", locale=locale(encoding="latin1"))
+```
+
+## Exploratory Data Analysis
+
+- Check missing values
+
+```{r}
+#check each column for missing values
+bike_data |> summarise(across(everything(), ~sum(is.na(.x))))
+```
+
+- Convert date to a date object
+
+```{r}
+library(lubridate)
+bike_data <- bike_data |> mutate(Date = lubridate::dmy(Date))
+
+head(bike_data)
+```
+
+- Change categorical variables to factors
+
+```{r}
+#change categorical variables to factors
+bike_data <- bike_data |> mutate(Seasons = as.factor(Seasons),
+                                 Holiday = as.factor(Holiday),
+                                `Functioning Day` = as.factor(`Functioning Day`))
+
+head(bike_data)
+```
+
+- Change column names to be more readable
+
+```{r}
+bike_data <- bike_data |> rename(date = Date,
+                                             rented_bike_count = `Rented Bike Count`,
+                                             hour = Hour,
+                                             temperature = `Temperature(°C)`,
+                                             humidity = `Humidity(%)`,
+                                             wind_speed = `Wind speed (m/s)`,
+                                             visibility = `Visibility (10m)`,
+                                             dew_point_temperature = `Dew point temperature(°C)`,
+                                             solar_radiation = `Solar Radiation (MJ/m2)`,
+                                             rainfall = `Rainfall(mm)`,
+                                             snowfall = `Snowfall (cm)`,
+                                             seasons = Seasons,
+                                             holiday = Holiday,
+                                             functioning_day = `Functioning Day`
+)
+
+head(bike_data)
+```
+
+- Get the summary data for bike counts
+
+```{r}
+bike_data |> summarise(
+  mean_bikes = mean(rented_bike_count),
+  median_bikes = median(rented_bike_count),
+  max_bikes = max(rented_bike_count),
+  min_bikes = min(rented_bike_count)
+)
+```
+
+- Since no bikes are rented on non functioning days lets remove those observations
+
+```{r}
+bike_data <- bike_data |> filter(!functioning_day == 'No')
+
+head(bike_data)
+```
+
+- Lets gets the summarized daily data
+
+```{r}
+daily_bike <- bike_data |> group_by(date,seasons,holiday) |>
+  summarise(
+    bike_count = sum(rented_bike_count),
+    rainfall = sum(rainfall),
+    snowfall = sum(snowfall),
+    temperature = mean(temperature),
+    humidity = mean(humidity),
+    windspeed = mean(wind_speed),
+    visibility = mean(visibility),
+    dewpoint_temp = mean(dew_point_temperature),
+    solar_radiation = mean(solar_radiation),
+    .groups = "drop"
+  )
+head(daily_bike)
+dim(daily_bike)
+```
+
+## Split the Data
+
+- Lets split the data for testing and training with 75% of observations in training and the rest for testing. The data is split with the strata argument as seasons.
+
+```{r}
+library(tidymodels)
+
+set.seed(10)
+bike_split <- initial_split(daily_bike, prop = 0.75, strata = seasons)
+bike_train <- training(bike_split)
+bike_test <- testing(bike_split)
+
+dim(bike_train)
+dim(bike_test)
+```
+
+- Now lets create a 10 fold split for cross validation on the training data
+
+```{r}
+bike_10_fold <- vfold_cv(bike_train, 10)
+
+bike_10_fold
+```
+
+## Fitting MLR Models
+
+- For the first recipe
+
+```{r}
+recipe_1 <- recipe(bike_count ~ ., data = bike_train) |>
+  step_date(date, features = "dow") |> 
+  step_mutate(
+    day_type = as.factor(ifelse(date_dow %in% c("Sat", "Sun"),"weekend","weekday" ))
+  ) |>
+  step_rm(date,date_dow) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_dummy(seasons, holiday, day_type)
+
+recipe_1
+```
+
+- Second recipe
+
+```{r}
+recipe_2 <- recipe(bike_count ~ ., data = bike_train) |>
+  step_date(date, features = "dow") |> 
+  step_mutate(
+    day_type = as.factor(ifelse(date_dow %in% c("Sat", "Sun"),"weekend","weekday" ))
+  ) |>
+  step_rm(date,date_dow) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_dummy(seasons, holiday, day_type) |>
+  step_interact(~starts_with("seasons_"):starts_with("holiday_") +
+                  starts_with("seasons_"):temperature +
+                  temperature:rainfall)
+
+recipe_2
+
+
+```
+
+- Third Recipe
+
+```{r}
+recipe_3 <- recipe(bike_count ~ ., data = bike_train) |>
+  step_date(date, features = "dow") |> 
+  step_mutate(
+    day_type = as.factor(ifelse(date_dow %in% c("Sat", "Sun"),"weekend","weekday" ))
+  ) |>
+  step_rm(date,date_dow) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_dummy(seasons, holiday, day_type) |>
+  step_interact(~starts_with("seasons_"):starts_with("holiday_") +
+                  starts_with("seasons_"):temperature +
+                  temperature:rainfall) |>
+  step_mutate(quad_temp = temperature^2,
+              quad_humid = humidity^2)
+
+
+
+recipe_3
+```
+
+## Fitting the Model
+
+- Take all the recipes and create workflows with the engine as linear model. Then combine the results of the fit using CV.
+
+```{r}
+linear_model <- linear_reg()|> set_engine("lm")
+
+bike_wfl_1 <- workflow() |>
+  add_recipe(recipe_1) |>
+  add_model(linear_model)
+
+bike_wfl_2 <- workflow() |>
+  add_recipe(recipe_2) |>
+  add_model(linear_model)
+
+bike_wfl_3 <- workflow() |>
+  add_recipe(recipe_3) |>
+  add_model(linear_model)
+
+
+workflows_list <- list(
+  recipe_1 = bike_wfl_1,
+  recipe_2 = bike_wfl_2,
+  recipe_3 = bike_wfl_3
+)
+model_results <- bind_rows(
+  fit_resamples(bike_wfl_1, bike_10_fold) |> collect_metrics() |> mutate(model = "recipe_1"),
+  fit_resamples(bike_wfl_2, bike_10_fold) |> collect_metrics() |> mutate(model = "recipe_2"),
+  fit_resamples(bike_wfl_3, bike_10_fold) |> collect_metrics() |> mutate(model = "recipe_3")
+)
+model_results
+```
+
+- Select the best model with the smallest rmse and fit using the whole dataset
+
+```{r}
+
+best_model <- model_results |> filter(.metric == "rmse") |> arrange(mean) |> slice(1)
+
+
+last_mlr <- last_fit(workflows_list[[best_model$model]], bike_split, metrics = metric_set(rmse,mae)) 
+
+final_model <- last_mlr |> extract_fit_parsnip() |> tidy()
+final_model
+```
+
+- Now lets select the best for the regression tree model
+
+```{r}
+library(tidymodels)
+library(rpart.plot)
+tune_spec <- decision_tree(
+  cost_complexity = tune(),
+  tree_depth = tune()
+) |>
+  set_engine("rpart") |>
+  set_mode("regression")
+
+tree_grid <- grid_regular(cost_complexity(),
+                          tree_depth(),
+                          levels =5)
+tree_wf <- workflow() |>
+  add_recipe(recipe_1) |>
+  add_model(tune_spec)
+
+tree_res <- tree_wf |> tune_grid(resamples = bike_10_fold, grid = tree_grid, metrics = metric_set(rmse, mae))
+
+best_tree <- select_best(tree_res, metric = "rmse")
+tree_final_wf <- finalize_workflow(tree_wf, best_tree)
+final_tree <- fit(tree_final_wf, bike_train)
+
+```
+
+- find the best bagged tree model and fit
+
+```{r}
+library(baguette)
+bag_spec <- bag_tree(cost_complexity = tune(),
+                     tree_depth = tune()) |>
+  set_engine("rpart") |>
+  set_mode("regression")
+
+bag_wf <- workflow() |>
+  add_recipe(recipe_1) |>
+  add_model(bag_spec)
+
+bag_res <- bag_wf |> tune_grid(resamples = bike_10_fold, grid = tree_grid, metrics = metric_set(rmse, mae))
+
+best_bag <- select_best(bag_res, metric = "rmse")
+bag_final_wf <- finalize_workflow(bag_wf, best_bag)
+final_bag <- fit(bag_final_wf, bike_train)
+
+```
+
+- Find the best random forest model and fit
+
+```{r}
+library(ranger)
+library(vip)
+rf_spec <- rand_forest(mtry = tune(), min_n = tune(), trees = 1000) |>
+  set_engine("ranger", importance = "impurity") |>
+  set_mode("regression")
+
+rf_wf <- workflow() |>
+  add_model(rf_spec) |>
+  add_recipe(recipe_1)
+
+# grid for all features
+rf_grid <- grid_regular(mtry(range = c(1,13)), min_n(), levels = 5)
+rf_res <-rf_wf |>
+  tune_grid(resamples = bike_10_fold, grid = rf_grid, metrics = metric_set(rmse, mae))
+
+best_rf <- select_best(rf_res, metric = "rmse")
+rf_final_wf <- finalize_workflow(rf_wf, best_rf)
+final_rf <- fit(rf_final_wf, bike_train)
+```
+
+## Model Testing
+
+- Now it is time to use the models that we made on the test data set to see which one performed the best
+
+```{r}
+
+last_tree <- last_fit(tree_final_wf, bike_split, metrics = metric_set(rmse, mae))
+last_bag <- last_fit(bag_final_wf, bike_split, metrics = metric_set(rmse, mae))
+last_rf <- last_fit(rf_final_wf, bike_split, metrics = metric_set(rmse, mae))
+
+test_results <- bind_rows(
+  collect_metrics(last_mlr) |> mutate(model = "MLR"),
+  collect_metrics(last_bag) |> mutate(model = "Bagged Tree"),
+  collect_metrics(last_tree) |> mutate(model = "Regression Tree"),
+  collect_metrics(last_rf) |> mutate(model = "Random Forest")
+)
+
+test_results |> select(model, .metric, .estimate) |> 
+  pivot_wider(names_from = .metric, values_from = .estimate) |> arrange(rmse, mae)
+```
+
+## Model Summaries
+
+```{r}
+#extract workflow to help in getting summaries
+final_mlr  <- extract_workflow(last_mlr)
+final_tree <- extract_workflow(last_tree)
+final_bag  <- extract_workflow(last_bag)
+final_rf   <- extract_workflow(last_rf)
+
+
+#final coefficient table for MLR
+final_mlr |> extract_fit_parsnip() |> tidy()
+
+#regression tree plot
+final_tree |> extract_fit_engine() |> rpart.plot(roundint = FALSE)
+
+
+#Bagged tree variable importance plot
+
+
+#Random Forest variable importance plot
+final_rf |> extract_fit_parsnip() |> vip()
+
+#final fit on the best model which is the tuned random forest model
+final_best_model <- fit(rf_final_wf, daily_bike)
+final_best_model
+```
