@@ -1,0 +1,377 @@
+---
+title: "emma_hw_10"
+format: html
+editor: visual
+---
+
+*Bringing necessary packages into current session*
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(lubridate)
+library(rsample)
+library(tidymodels)
+```
+
+# PART ONE : EDA
+
+*Reading in data*
+
+```{r}
+seoul_bike_data <- read_csv('HW9/SeoulBikeData.csv', locale = locale(encoding = 'Latin1'))
+```
+
+*Checking for missing values*
+
+```{r}
+is.na(seoul_bike_data)
+#No NAs!
+```
+
+*Checking column types and values within columns*
+
+```{r}
+#Checking column types
+str(seoul_bike_data)
+
+#Checking summary statistics
+num_summaries <- seoul_bike_data |>
+  select(`Temperature(°C)`, `Humidity(%)`, `Wind speed (m/s)`, `Visibility (10m)`, `Dew point temperature(°C)`, `Solar Radiation (MJ/m2)`, `Rainfall(mm)`, `Snowfall (cm)`, `Rented Bike Count`, Hour)
+
+summary(num_summaries)
+
+#Checking categorical variable unique values
+unique(seoul_bike_data$Seasons)
+unique(seoul_bike_data$Holiday)
+unique(seoul_bike_data$`Functioning Day`)
+```
+
+*Changing **Date** data*
+
+```{r}
+#Date is stored in a day/month/year format as a character
+seoul_bike_data_new <- seoul_bike_data |>
+  mutate(Date = dmy(Date))
+
+str(seoul_bike_data_new$Date)
+```
+
+*Changing characters into factors*
+
+```{r}
+seoul_bike_data_cat <- seoul_bike_data_new |>
+  mutate(
+    Seasons = as.factor(Seasons),
+    Holiday = as.factor(Holiday),
+    `Functioning Day` = as.factor(`Functioning Day`)
+  )
+str(seoul_bike_data_cat$Seasons)
+str(seoul_bike_data_cat$Holiday)
+str(seoul_bike_data_cat$`Functioning Day`)
+```
+
+*Renaming all variables*
+
+```{r}
+seoul_bike_data_final <- seoul_bike_data_cat |>
+  rename(date = Date, rented_bike_count = `Rented Bike Count`, hour = Hour, temp = `Temperature(°C)`, humidity = `Humidity(%)`, windspeed = `Wind speed (m/s)`, visibility = `Visibility (10m)`, dew_point_temp = `Dew point temperature(°C)`, solar_rad = `Solar Radiation (MJ/m2)`, rainfall = `Rainfall(mm)`, snowfall = `Snowfall (cm)`, seasons = Seasons, holiday = Holiday, fun_day = `Functioning Day`)
+
+str(seoul_bike_data_final)
+```
+
+*Creating summary statistics*
+
+```{r}
+#Calculating mean, sd, and median for bike rentals
+seoul_bike_data_final |>
+  summarize(mean_rent = mean(seoul_bike_data_final$rented_bike_count), med_rent = median(seoul_bike_data_final$rented_bike_count), sd_rent = sd(seoul_bike_data_final$rented_bike_count))
+
+seoul_bike_data_final |>
+  group_by(seasons) |>
+  summarize(mean_rent = mean(seoul_bike_data_final$rented_bike_count), med_rent = median(seoul_bike_data_final$rented_bike_count), sd_rent = sd(seoul_bike_data_final$rented_bike_count))
+
+seoul_bike_data_final |>
+  group_by(holiday) |>
+  summarize(mean_rent = mean(seoul_bike_data_final$rented_bike_count), med_rent = median(seoul_bike_data_final$rented_bike_count), sd_rent = sd(seoul_bike_data_final$rented_bike_count))
+
+seoul_bike_data_final |>
+  group_by(fun_day) |>
+  summarize(mean_rent = mean(seoul_bike_data_final$rented_bike_count), med_rent = median(seoul_bike_data_final$rented_bike_count), sd_rent = sd(seoul_bike_data_final$rented_bike_count))
+
+#Filtering out days that were not functioning
+new_bike_data <- seoul_bike_data_final |>
+  filter(fun_day != 'No')
+
+new_bike_data$fun_day
+```
+
+*Summarizing daily data*
+
+```{r}
+#Getting all of the means and sums for the numeric variables
+day_bike_data <- new_bike_data |>
+  group_by(date, seasons, holiday) |>
+  summarize(
+    bike_sum = sum(rented_bike_count),
+    rain_sum = sum(rainfall),
+    snow_sum = sum(snowfall),
+    mean_hum = mean(humidity),
+    mean_temp = mean(temp),
+    mean_wind = mean(windspeed),
+    mean_dew = mean(dew_point_temp),
+    mean_solar = mean(solar_rad),
+    mean_vis = mean(visibility),
+    .groups = 'drop'
+  )
+
+str(day_bike_data)
+```
+
+*Recreating summary stats*
+
+~Summaries~
+
+```{r}
+#Finding mean, median, and standard deviation for bike_sum, with the last two being across the seasons and holiday categories
+day_bike_data |>
+  summarize(mean_bike = mean(bike_sum), med_bike = median(bike_sum), sd_bike = sd(bike_sum))
+
+day_bike_data |>
+  group_by(seasons) |>
+  summarize(mean_bike = mean(bike_sum), med_bike = median(bike_sum), sd_bike = sd(bike_sum))
+
+day_bike_data |>
+  group_by(holiday) |>
+  summarize(mean_bike = mean(bike_sum), med_bike = median(bike_sum), sd_bike = sd(bike_sum))
+
+```
+
+# PART TWO: SPLITTING THE DATA
+
+*Using the **initial_split** function to create training and testing sets of data*
+
+```{r}
+set.seed(558)
+
+split_data <- initial_split(day_bike_data, prop = 3/4, strata = seasons)
+
+testing_data <- testing(split_data)
+training_data <- training(split_data)
+```
+
+*Creating the CV folds*
+
+```{r}
+set.seed(558)
+
+training_folds <- vfold_cv(data = training_data, v = 10)
+
+training_folds
+```
+
+# PART THREE: FITTING MLR MODELS
+
+*First recipe, uses **weekend** and **weekday** variable, removes **date**, standardizes numeric predictors, and creates dummy variables*
+
+```{r}
+model_1 <- recipe(bike_sum ~ ., data = training_data) |>
+  step_date(date, features = 'dow') |>
+  step_mutate(day_type = factor(if_else(date_dow %in% c('Sat', 'Sun'), 'Weekend', 'Weekday'))) |>
+  step_rm(date, date_dow) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_dummy(all_nominal_predictors())
+
+model_1
+```
+
+*Second recipe, adds interaction terms to previous recipe*
+
+```{r}
+model_2 <- recipe(bike_sum ~ ., data = training_data) |>
+  step_date(date, features = 'dow') |>
+  step_mutate(day_type = factor(if_else(date_dow %in% c('Sat', 'Sun'), 'Weekend', 'Weekday'))) |>
+  step_rm(date, date_dow) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_dummy(all_nominal_predictors()) |>
+  step_interact(terms = ~ starts_with('seasons_'):starts_with('holiday_') + starts_with('seasons_'):mean_temp + mean_temp:rain_sum)
+
+model_2
+```
+
+*Third recipe, adding squared terms for **mean_temp** and **mean_hum***
+
+```{r}
+model_3 <- recipe(bike_sum ~ ., data = training_data) |>
+  step_date(date, features = 'dow') |>
+  step_mutate(day_type = factor(if_else(date_dow %in% c('Sat', 'Sun'), 'Weekend', 'Weekday'))) |>
+  step_rm(date, date_dow) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_dummy(all_nominal_predictors()) |>
+  step_interact(terms = ~ starts_with('seasons_'):starts_with('holiday_') + starts_with('seasons_'):mean_temp + mean_temp:rain_sum) |>
+  step_mutate(temp_sq = mean_temp^2, hum_sq = mean_hum^2)
+
+model_3
+```
+
+*Fitting all recipes*
+
+```{r}
+lin_reg_model <- linear_reg() |>
+  set_engine('lm')
+
+lin_reg_model
+```
+
+*Workflows for all three recipes*
+
+```{r}
+workflow_1 <- workflow() |>
+  add_recipe(model_1) |>
+  add_model(lin_reg_model)
+
+workflow_2 <- workflow() |>
+  add_recipe(model_2) |>
+  add_model(lin_reg_model)
+
+workflow_3 <- workflow() |>
+  add_recipe(model_3) |>
+  add_model(lin_reg_model)
+```
+
+*Fitting with CV folds*
+
+```{r}
+set.seed(558)
+
+cv_fit_1 <- fit_resamples(workflow_1, resamples = training_folds, metrics = metric_set(rmse, mae))
+
+cv_fit_2 <- fit_resamples(workflow_2, resamples = training_folds, metrics = metric_set(rmse, mae))
+
+cv_fit_3 <- fit_resamples(workflow_3, resamples = training_folds, metrics = metric_set(rmse, mae))
+```
+
+*Comparing models*
+
+```{r}
+results <- bind_rows(
+  collect_metrics(cv_fit_1) |>
+    mutate(model = 'Model 1'),
+  collect_metrics(cv_fit_2) |>
+    mutate(model = 'Model 2'),
+  collect_metrics(cv_fit_3) |>
+    mutate(model = 'Model 3')
+)
+
+results
+
+results |>
+  select(model, .metric, mean, std_err)
+```
+
+~*The\ model\ with\ the\ lowest\ RMSE\ is\ **Model\ 3***.\ *That\ is\ the\ one\ we\ will\ use*.~
+
+*Fitting **Model 3***
+
+```{r}
+lin_model <- last_fit(
+  workflow_3,
+  split = split_data,
+  metrics = metric_set(rmse, mae)
+)
+
+collect_metrics(lin_model)
+```
+
+*Finding coefficients*
+
+```{r}
+lin_model_coef <- extract_workflow(lin_model) |>
+  extract_fit_parsnip()
+tidy(lin_model_coef)
+```
+
+# PART FOUR: FITTING OTHER MODELS
+
+*Making recipe for a tuned regression tree model*
+
+```{r}
+reg_tree <- recipe(bike_sum ~ ., data = training_data) |>
+  step_date(date, features = 'dow') |>
+  step_mutate(day_type = factor(if_else(date_dow %in% c('Sat', 'Sun'), 'Weekend', 'Weekday'))) |>
+  step_rm(date, date_dow)
+
+reg_tree
+```
+
+*Fitting tree model*
+
+```{r}
+reg_tree_model <- decision_tree(cost_complexity = tune(), tree_depth = tune(), min_n = tune()) |>
+  set_engine('rpart') |>
+  set_mode('regression')
+
+reg_tree_model
+```
+
+*Making workflow*
+
+```{r}
+reg_tree_workflow <- workflow() |>
+  add_recipe(reg_tree) |>
+  add_model(reg_tree_model)
+
+reg_tree_workflow
+```
+
+*Making a tuning grid*
+
+```{r}
+reg_grid <- grid_regular(cost_complexity(), tree_depth(), min_n(), levels = 3)
+
+reg_grid
+```
+
+*Applying tuning grid*
+
+```{r}
+set.seed(558)
+reg_tree_tuned <- tune_grid(reg_tree_workflow, resamples = training_folds, grid = reg_grid, metrics = metric_set(rmse, mae))
+
+collect_metrics(reg_tree_tuned)
+```
+
+*Selecting best model*
+
+```{r}
+best_model <- select_best(reg_tree_tuned, metric = 'rmse')
+
+best_model
+```
+
+*Making final tree*
+
+```{r}
+reg_workflow_final <- finalize_workflow(reg_tree_workflow, best_model)
+
+reg_tree_final <- last_fit(reg_workflow_final, split = split_data, metrics = metric_set(rmse, mae))
+
+collect_metrics(reg_tree_final)
+```
+
+*Comparing final models*
+
+```{r}
+final_models <- bind_rows(
+  collect_metrics(lin_model) |>
+    mutate(model = 'Lin Reg'),
+  
+  collect_metrics(reg_tree_final) |>
+    mutate(model = 'Reg Tree')
+)
+
+final_models |>
+  select(model, .metric, .estimate)
+```
+
+~The\ linear\ regression\ model\ has\ the\ lower\ RMSE,\ so\ we\ can\ confirm\ that\ this\ model\ is\ likely\ the\ best\ fit\ one!~
