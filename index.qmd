@@ -10,3 +10,4 @@ Welcome to the ST 558 Group 7 homework website.
 - [Homework 4](HW4/hw4_group7_final.qmd)
 - [Homework 5](HW5/hw5_group7_final.html)
 - [Homework 9](HW9/index.html)
+- [Homework 10](HW10/hw10_group7_final.html)
